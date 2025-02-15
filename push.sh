@@ -1,0 +1,1 @@
+adb push target/aarch64-linux-android/release/cheat /data/local/tmp

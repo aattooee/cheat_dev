@@ -1,0 +1,28 @@
+[package]
+name = "cheat"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+memory-tool-4-cheat ={ path = "/home/jinx/memory-tool-4-cheat"}
+log = "0.4"
+simple_logger = "5.0"
+ash = { version = "0.38", default-features = false, features = ["debug","linked"] }
+ultraviolet = "0.9"
+gpu-allocator = { version = "0.27", default-features = false, features = ["vulkan"] }
+
+
+imgui = { version = "^0.12", features = ["tables-api"] }
+
+ash-window = "0.13"
+image = "0.25"
+imgui-rs-vulkan-renderer = { version = "1.16.0" ,features = ["gpu-allocator"]}
+android_native_window = { version = "0.5.1"}
+raw-window-handle = "0.6.2"
+mint = "0.5.6" 
+nohash-hasher = "0.2.0"
+[features]
+default =[]
+
+debug_bones =[]
+draw_all_bones=[]
