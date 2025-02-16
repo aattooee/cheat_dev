@@ -25,11 +25,11 @@ pub fn run() {
     let mut game_data = GameData::default();
     // let mut value = 0;
     // let choices = ["test test this is 1", "test test this is 2"];
-    let mut frame_rate = 90.0f32;
+
     System::new("title")
         .unwrap()
-        .run((), move |run, ui1| {
-            ui::gen_user_interface(run, ui1, &mut frame_rate);
+        .run((), move |run, ui1,frame_rate| {
+            ui::gen_user_interface(run, ui1, frame_rate);
             data::prepare_data(&mut game_mem, &mut game_data);
             esp::esp(ui1, &mut game_data);
         })

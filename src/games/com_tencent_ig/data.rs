@@ -72,7 +72,6 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
     let (actors_addr, actors_count) =
         game_mem.read_with_offsets::<(u64, i32)>(ulevel, offsets::OBJARR);
-
     if actors_count <= 0 || actors_count > 2000 {
         return;
     }
@@ -103,15 +102,16 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
     for i in 0..actors_count {
         let current_actor = game_data.actor_array[i as usize];
-        if game_data.local_team_set.contains(&current_actor) {
-            continue;
-        }
+
+        // if game_data.local_team_set.contains(&current_actor) {
+        //     continue;
+        // }
         if game_data.non_player_set.contains(&current_actor) {
             continue;
         }
         if !game_data.players_set.contains(&current_actor) {
             let current_actor_type =
-                game_mem.read_with_offsets::<f32>(current_actor, offsets::OBJTYPE);
+                game_mem.read_with_offsets::<f32>(current_actor, offsets::DEFAULT_SPEED);
             if current_actor_type != 479.5 {
                 game_data.non_player_set.insert(current_actor);
                 continue;
@@ -120,12 +120,12 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
         }
 
         //读取玩家信息
-        let uk0x1b0 = game_mem.read_with_offsets::<u64>(current_actor, offsets::UK0X1B0);
-        if uk0x1b0 <= 0xffff
-            || uk0x1b0 == 0
-            || uk0x1b0 <= 0x10000000
-            || uk0x1b0 % 4 != 0
-            || uk0x1b0 >= 0x10000000000
+        let root_comp = game_mem.read_with_offsets::<u64>(current_actor, offsets::ROOT_COMP);
+        if root_comp <= 0xffff
+            || root_comp == 0
+            || root_comp <= 0x10000000
+            || root_comp % 4 != 0
+            || root_comp >= 0x10000000000
         {
             continue;
         }
@@ -147,9 +147,9 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
         
         game_mem.read_memory_with_offsets(
-            uk0x1b0,
+            root_comp,
             &mut current_player.world_position,
-            offsets::UK0X1C0,
+            offsets::TRANSLATION_IN_TRANSFORM,
         );
         if !current_player.position_valid() {
             continue;
@@ -162,6 +162,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
         current_player.max_health = max_health;
 
         //距离
+
         current_player.distance_to_player = game_data
             .local_position
             .to_other_distance(&current_player.world_position, 0.01);
@@ -187,8 +188,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 offsets::VELOCITYNOTONVEHICLE,
             );
         }
-        //玩家是否为bot
-        current_player.is_bot = game_mem.read_with_offsets(current_actor, offsets::ISBOT);
+
 
         world_to_screen(
             &mut current_player.screen_position,
@@ -202,6 +202,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
         //玩家姓名
         let mut name: [u16; 16] = [0; 16];
         game_mem.read_memory_with_offsets(current_actor, &mut name, offsets::PLAYERNAME);
+
         get_utf8(&mut current_player.player_name, &name);
         // read bones positions
         if current_player.is_in_screen() {
@@ -366,8 +367,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
             game_mem.un_set_additional_offset();
             #[cfg(feature = "debug_bones")]
             {
-                for i in 67..68 {
-                    let bone: FTransform = game_mem.read_with_offsets(mesh, &[48 * i as u64]);
+                for i in 1..68 {
+                    let bone: FTransform = game_mem.read_with_offsets(mesh, &[0x30 * i as u64]);
                     let mut bone1: Bone = Bone::default();
                     get_bone_pos(&bone, &c2w_trans, &mut bone1, &game_data.matrix);
 
@@ -440,10 +441,10 @@ fn get_utf8(buf: &mut [u8], buf16: &[u16; 16]) {
     while p_temp_utf16 < 16 && p_temp_utf8 < p_utf8_end && buf16[p_temp_utf16] != 0 {
         let utf16 = buf16[p_temp_utf16];
 
-        if utf16 <= 0x007F && p_temp_utf8 + 1 <= p_utf8_end {
+        if utf16 <= 0x007F && p_temp_utf8 < p_utf8_end {
             buf[p_temp_utf8] = utf16 as u8;
             p_temp_utf8 += 1;
-        } else if utf16 >= 0x0080 && utf16 <= 0x07FF && p_temp_utf8 + 2 <= p_utf8_end {
+        } else if (0x0080..=0x07FF).contains(&utf16) && p_temp_utf8 + 2 <= p_utf8_end {
             buf[p_temp_utf8] = (utf16 >> 6) as u8 | 0xC0;
             buf[p_temp_utf8 + 1] = (utf16 & 0x3F) as u8 | 0x80;
             p_temp_utf8 += 2;

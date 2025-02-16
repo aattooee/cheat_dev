@@ -159,7 +159,7 @@ impl Player {
     pub fn is_in_screen(&self) -> bool {
         self.depth_in_camera > 100.0
     }
-    pub fn get_name<'a>(&'a self) -> &'a str {
+    pub fn get_name(&self) -> &str {
         // 查找0x00的位置
         let len = self
             .player_name

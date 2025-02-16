@@ -16,9 +16,9 @@ checksum = "4aa90d7ce82d4be67b64039a3d588d38dbcc6736577de4a847025ce5b0c468d1"
 
 [[package]]
 name = "android_native_window"
-version = "0.5.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d824ee192b4e7393fa480bada53f05fdc3af618bded8451aeda6112c107c7e5d"
+checksum = "30d5475ca3ffc2f7a0a0d34f81959179daced0eebab307643297850946cc8e53"
 dependencies = [
  "evdev",
  "imgui",

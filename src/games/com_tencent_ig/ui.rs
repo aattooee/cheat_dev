@@ -1,7 +1,7 @@
 use imgui::Condition;
 use imgui::Ui;
 
-pub fn gen_user_interface(opened: &mut bool, ui: &mut Ui, frame_rate: &mut f32) {
+pub fn gen_user_interface(opened: &mut bool, ui: &mut Ui, frame_rate: &mut f64) {
     ui.window("HEllo world")
         .opened(opened)
         .size([440.0, 320.0], Condition::FirstUseEver)

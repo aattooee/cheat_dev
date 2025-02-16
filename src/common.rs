@@ -195,7 +195,7 @@ impl<A: App> System<A> {
 
     pub fn run<B>(self, mut app: A, mut ui_builder: B) -> Result<(), Box<dyn Error>>
     where
-        B: FnMut(&mut bool, &mut Ui) + 'static,
+        B: FnMut(&mut bool, &mut Ui,&mut f64) + 'static,
     {
         log::info!("Starting application");
 
@@ -215,7 +215,7 @@ impl<A: App> System<A> {
         let mut dirty_swapchain = false;
 
         // Main loop
-        event_loop.run(move |event, delta_ime, run| {
+        event_loop.run(move |event, delta_ime, run,frame_rate| {
             //handle mouse event and delatime
             Window::handle_event(imgui.io_mut(), event, delta_ime);
             //
@@ -240,7 +240,7 @@ impl<A: App> System<A> {
             // platform
 
             let ui = imgui.frame();
-            ui_builder(run, ui);
+            ui_builder(run, ui,frame_rate);
 
             if !(*run) {
                 return;

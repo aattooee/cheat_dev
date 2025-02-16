@@ -110,11 +110,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
                 distance_text_size[1],
             );
             top -= distance_text_size[1];
-            let name = if player.is_bot {
-                "BOT"
-            } else {
-                player.get_name()
-            };
+            let name = player.get_name();
             let mut name_text_size = ui.calc_text_size(&name);
 
             name_text_size[0] *= font_scale;
