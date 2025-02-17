@@ -194,7 +194,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
             game_mem.read_memory_with_offsets(
                 current_actor,
                 &mut current_player.velocity,
-                offsets::VELOCITYNOTONVEHICLE,
+                offsets::VELOCITY,
             );
         }
 

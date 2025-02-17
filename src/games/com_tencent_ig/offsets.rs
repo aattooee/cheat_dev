@@ -25,8 +25,8 @@ define_offsets!(
     TEAMID:[0x938],//
     HEALTH:[0xdc0],//
     ONVEHICLE:[0xe08],//?
-    VELOCITYNOTONVEHICLE:[0x1c08, 0x12c],//STCharacterMovementComponent* STCharacterMovement->Vector Velocity;
-    VELOCITYONVEHICLE:[0x1330],
+    VELOCITY:[0x1c08, 0x12c],//STCharacterMovementComponent* STCharacterMovement->Vector Velocity;
+    VELOCITYONVEHICLE:[0x18b8,0x12c],//STExtraWheeledVehicle.STExtraVehicleBase.Pawn.Actor.Object::STExtraVehicleMovementComponent4W* VehicleMovement->Vector Velocity;
     PLAYERNAME:[0x8f0,0x0],//
     PLAYERUID:[0x918,0x0],
     C2W_TRANSFORM:[0x498,0x1b0],// SceneComponent.ActorComponent.Object::Vector RelativeScale3D+0xc + 0x8(Transform)//private in pubgm, but public in pubgmhd
