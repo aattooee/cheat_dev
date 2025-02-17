@@ -8,18 +8,39 @@ static WHITE_INNER: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 255
 static GREEN_OUTER: imgui::ImColor32 = imgui::ImColor32::from_rgba(0, 255, 0, 191);
 static GREEN_INNER: imgui::ImColor32 = imgui::ImColor32::from_rgba(0, 255, 0, 12);
 static YELLOW: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 0, 191);
+static WHEEL: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 66, 100);
 
 pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
     let draw_list = ui.get_background_draw_list();
     #[cfg(feature = "debug_actors")]
-            {
+    {
+        for i in &game_data.actors {
+            let pos = i.position_on_screen.to_pos();
+            let col = [1.0, 1.0, 1.0];
+            draw_list.add_text(pos, col, format!("{}", i.r#type));
+        }
+    }
+    #[cfg(feature = "debug_car")]
+    {
+        for car in &game_data.cars {
+            draw_list.add_text(
+                car.position_on_screen.to_pos(),
+                [1.0, 1.0, 1.0],
+                format!("T:  {}", car.car_type),
+            );
+            for i in &car.debug_bones {
+                let pos = i.position_on_screen.to_pos();
+                let col = [1.0, 1.0, 1.0];
 
-                for i in &game_data.actors{
-                    let pos = i.position_on_screen.to_pos();
-                    let col = [1.0, 1.0, 1.0];
-                    draw_list.add_text(pos,col,format!("{}",i.r#type));
-                }
+                draw_list.add_text(pos, col, i.name_for_debug.clone());
+                draw_list
+                    .add_circle(pos, 5.0, col)
+                    .filled(true)
+                    .thickness(5.0)
+                    .build();
             }
+        }
+    }
     for player in &game_data.players {
         if player.is_in_screen() {
             let font_scale: f32 = 0.5;
@@ -45,7 +66,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
                 right_ankle,
                 ..
             } = player;
-            
+
             #[cfg(feature = "debug_bones")]
             {
                 for i in &player.bone_debug {
@@ -122,7 +143,11 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
                 distance_text_size[1],
             );
             top -= distance_text_size[1];
-            let name = if player.is_bot {"BOT"}else{player.get_name()};
+            let name = if player.is_bot {
+                "BOT"
+            } else {
+                player.get_name()
+            };
             let mut name_text_size = ui.calc_text_size(name);
 
             name_text_size[0] *= font_scale;
@@ -144,6 +169,15 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
                     WHITE_OUTER,
                 )
                 .thickness(2.0)
+                .build();
+        }
+    }
+    for car in &game_data.cars {
+        for wheel in &car.wheels {
+            draw_list
+                .add_circle(wheel.position_on_screen.to_pos(), 8.0, WHEEL)
+                .filled(true)
+                .thickness(5.0)
                 .build();
         }
     }

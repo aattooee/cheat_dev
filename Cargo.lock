@@ -216,6 +216,7 @@ dependencies = [
  "image",
  "imgui",
  "imgui-rs-vulkan-renderer",
+ "lazy_static",
  "log",
  "memory-tool-4-cheat",
  "mint",

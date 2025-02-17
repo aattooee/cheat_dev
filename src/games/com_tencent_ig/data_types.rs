@@ -107,7 +107,7 @@ pub struct FTransform {
 pub struct Bone {
     pub world_position: Vec3, // 世界坐标
     pub position_on_screen: Vec2,
-    #[cfg(feature = "debug_bones")]
+    #[cfg(any(feature = "debug_bones", feature = "debug_car"))]
     pub name_for_debug: String,
 }
 #[repr(C)]
@@ -187,5 +187,29 @@ impl Player {
 
         // 将子切片转换为 &str
         std::str::from_utf8(utf8_slice).expect("Invalid UTF-8 sequence")
+    }
+}
+#[repr(C)]
+#[derive(Debug)]
+pub struct Car {
+    pub wheels: [Bone; 2],
+    #[cfg(feature = "debug_car")]
+    pub position_on_screen: Vec2,
+    #[cfg(feature = "debug_car")]
+    pub debug_bones: Vec<Bone>,
+    #[cfg(feature = "debug_car")]
+    pub car_type: u16,
+}
+impl Default for Car {
+    fn default() -> Self {
+        Self {
+            wheels: Default::default(),
+            #[cfg(feature = "debug_car")]
+            position_on_screen: Default::default(),
+            #[cfg(feature = "debug_car")]
+            debug_bones: Default::default(),
+            #[cfg(feature = "debug_car")]
+            car_type: Default::default(),
+        }
     }
 }

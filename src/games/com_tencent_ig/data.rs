@@ -2,18 +2,18 @@ static mut UE4: u64 = 0;
 static mut OLDUWORLD: u64 = 0;
 static mut OLDULEVEL: u64 = 0;
 static mut OLDGNAME: u64 = 0;
-use std::process::exit;
 
 #[allow(unused_imports)]
 use super::data_types::*;
-use nohash_hasher::{IntMap, IntSet};
+use nohash_hasher::IntSet;
 #[cfg(feature = "debug_actors")]
 #[repr(C)]
 #[derive(Default, Debug)]
-pub struct Actor{
-    pub r#type:u32,
-    pub position_on_screen:Vec2
+pub struct Actor {
+    pub r#type: u32,
+    pub position_on_screen: Vec2,
 }
+
 pub struct GameData {
     pub local_player: u64,
     pub local_team_id: i32,
@@ -29,8 +29,9 @@ pub struct GameData {
     pub non_player_set: IntSet<u64>,
     pub local_team_set: IntSet<u64>,
     pub actor_array: [u64; 2000],
+    pub cars: Vec<Car>,
     #[cfg(feature = "debug_actors")]
-    pub actors:Vec<Actor>,
+    pub actors: Vec<Actor>,
 }
 
 impl Default for GameData {
@@ -49,13 +50,14 @@ impl Default for GameData {
                 y: 0.0,
                 z: 0.0,
             },
-            players: Vec::with_capacity(100),   // 使用默认值初始化
+            players: Vec::with_capacity(100), // 使用默认值初始化
             local_team_set: IntSet::default(),
             players_set: IntSet::default(),
             non_player_set: IntSet::default(),
             actor_array: [0; 2000],
+            cars: Vec::with_capacity(100),
             #[cfg(feature = "debug_actors")]
-            actors:Vec::with_capacity(1000),
+            actors: Vec::with_capacity(1000),
         }
     }
 }
@@ -108,8 +110,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
     game_data.players.clear();
     #[cfg(feature = "debug_actors")]
     game_data.actors.clear();
-
-
+    game_data.cars.clear();
     game_mem.read_memory_with_length_and_offsets(
         actors_addr,
         game_data.actor_array.as_mut_ptr() as _,
@@ -119,41 +120,94 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
     for i in 0..actors_count {
         let current_actor = game_data.actor_array[i as usize];
-        #[cfg(feature = "debug_actors")]
-        {
-            let idx:u32 = game_mem.read_with_offsets(current_actor, &[0x18]);
+
+        let car_type: u16 = game_mem.read_with_offsets(current_actor, &[0x64c]);
+        if let Some((_car_name, wheels_offsets)) = offsets::CARS_MAP.get(&car_type) {
             let root_comp = game_mem.read_with_offsets::<u64>(current_actor, offsets::ROOT_COMP);
-            let mut actor:Actor=Actor::default();
+            let mut car = Car {
+                #[cfg(feature = "debug_car")]
+                car_type,
+                ..Default::default()
+            };
             let mut trans: Vec3 = Vec3::default();
-            actor.r#type = idx;
-            
             game_mem.read_memory_with_offsets(
                 root_comp,
                 &mut trans,
                 offsets::TRANSLATION_IN_TRANSFORM,
             );
-            
-            world_to_screen_without_depth(&mut actor.position_on_screen,&trans,&game_data.matrix,1200.0,540.0);
-            
+
+            let car_c2w_trans: FTransform =
+                game_mem.read_with_offsets(current_actor, &[0xaf8, 0x1b0]);
+            let mesh: u64 = game_mem.read_with_offsets(current_actor, &[0xaf8, 0x878]);
+            for (idx, wheel_offset) in wheels_offsets.iter().enumerate().take(2) {
+                let bone_trans: FTransform =
+                    game_mem.read_with_offsets(mesh, &[(0x30 * *wheel_offset as u64)]);
+                let mut bone: Bone = Bone::default();
+                get_bone_pos(&bone_trans, &car_c2w_trans, &mut bone, &game_data.matrix);
+                car.wheels[idx] = bone;
+            }
+            #[cfg(feature = "debug_car")]
+            {
+                world_to_screen_without_depth(
+                    &mut car.position_on_screen,
+                    &trans,
+                    &game_data.matrix,
+                    1200.0,
+                    540.0,
+                );
+                for i in 1..=15 {
+                    let bone: FTransform = game_mem.read_with_offsets(mesh, &[0x30 * i as u64]);
+                    let mut bone1: Bone = Bone::default();
+                    get_bone_pos(&bone, &car_c2w_trans, &mut bone1, &game_data.matrix);
+
+                    bone1.name_for_debug = i.to_string();
+                    car.debug_bones.push(bone1);
+                }
+            }
+            game_data.cars.push(car);
+            continue;
+        }
+
+        #[cfg(feature = "debug_actors")]
+        {
+            let root_comp = game_mem.read_with_offsets::<u64>(current_actor, offsets::ROOT_COMP);
+            let mut actor: Actor = Actor::default();
+            let mut trans: Vec3 = Vec3::default();
+            actor.r#type = idx;
+
+            game_mem.read_memory_with_offsets(
+                root_comp,
+                &mut trans,
+                offsets::TRANSLATION_IN_TRANSFORM,
+            );
+
+            world_to_screen_without_depth(
+                &mut actor.position_on_screen,
+                &trans,
+                &game_data.matrix,
+                1200.0,
+                540.0,
+            );
+
             game_data.actors.push(actor);
         }
         if game_data.local_player == current_actor {
             continue;
         }
-        
+
         if game_data.non_player_set.contains(&current_actor) {
             continue;
         }
         if !game_data.players_set.contains(&current_actor) {
             let current_actor_type =
                 game_mem.read_with_offsets::<f32>(current_actor, offsets::DEFAULT_SPEED);
-            
-            //println!("{idx}"); 
+
+            //println!("{idx}");
             if current_actor_type != 479.5 {
                 game_data.non_player_set.insert(current_actor);
                 continue;
             }
-            
+
             game_data.players_set.insert(current_actor);
         }
 
@@ -173,16 +227,6 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
         }
         let mut current_player = Player::default();
 
-        //是否同队
-        // #[cfg(not(feature = "debug_bones"))]
-        // {
-        //     current_player.team_id = game_mem.read_with_offsets(current_actor, offsets::TEAMID);
-        //     if current_player.team_id == game_data.local_team_id {
-        //         game_data.local_team_set.insert(current_actor);
-        //         continue;
-        //     }
-        // }
-
         game_mem.read_memory_with_offsets(
             root_comp,
             &mut current_player.world_position,
@@ -196,7 +240,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
         current_player.distance_to_player = game_data
             .local_position
             .to_other_distance(&current_player.world_position, 0.01);
-        if current_player.distance_to_player >400.0{
+        if current_player.distance_to_player > 400.0 {
             continue;
         }
 
@@ -205,8 +249,6 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
             game_mem.read_with_offsets::<(f32, f32)>(current_actor, offsets::HEALTH);
         current_player.health_percentage = health / max_health;
         current_player.max_health = max_health;
-
-        
 
         //头甲包
 
@@ -239,11 +281,11 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
             1200.0,
             540.0,
         );
-        
+
         //isbot
-        let mut uid:u16 = 0;
-        
-        game_mem.set_additional_offset(2*5, false);//读取第5个字符，如果非0则是真人
+        let mut uid: u16 = 0;
+
+        game_mem.set_additional_offset(2 * 5, false); //读取第5个字符，如果非0则是真人
         game_mem.read_memory_with_offsets(current_actor, &mut uid, offsets::PLAYERUID);
 
         current_player.is_bot = uid == 0;
@@ -259,7 +301,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 game_mem.read_with_offsets(current_actor, offsets::C2W_TRANSFORM);
 
             let mut head: FTransform = game_mem.read_with_offsets(mesh, offsets::HEAD);
-            
+
             head.translation.z += 15.0;
             get_bone_pos(
                 &head,
@@ -429,7 +471,6 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
         game_data.players.push(current_player);
     }
-    
 }
 fn get_bone_pos(
     bone_trans: &FTransform,

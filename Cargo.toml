@@ -21,12 +21,14 @@ android_native_window = { version = "0.5.3"}
 raw-window-handle = "0.6.2"
 mint = "0.5.6" 
 nohash-hasher = "0.2.0"
+lazy_static="*"
 [features]
 default =[]
 
 debug_bones =[]
 draw_all_bones=[]
 debug_actors = []
+debug_car =[]
 
 # [profile.release]
 # opt-level = "z"
