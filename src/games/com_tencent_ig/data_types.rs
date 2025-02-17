@@ -164,6 +164,7 @@ pub struct Player {
     #[cfg(feature = "debug_bones")]
     pub bone_debug: Vec<Bone>,
 }
+
 impl Player {
     pub fn position_valid(&self) -> bool {
         !(self.world_position.x == 0.0
@@ -187,13 +188,4 @@ impl Player {
         // 将子切片转换为 &str
         std::str::from_utf8(utf8_slice).expect("Invalid UTF-8 sequence")
     }
-}
-#[repr(C)]
-pub struct Supply {
-    pub width_on_screen: f32, // 在屏幕上的宽度宽度
-    pub world_position: Vec3, // 世界坐标
-    pub screen_pos: Vec2,     // 屏幕坐标
-    pub camera_angle: f32,    // 人物相机
-    pub distance: f32,        // 距离
-    pub name: [u8; 128],      // 玩家名称，字符数组需要转为字节数组
 }

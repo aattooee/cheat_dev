@@ -26,6 +26,7 @@ default =[]
 
 debug_bones =[]
 draw_all_bones=[]
+debug_actors = []
 
 # [profile.release]
 # opt-level = "z"

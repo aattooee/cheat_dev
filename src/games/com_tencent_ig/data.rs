@@ -7,6 +7,13 @@ use std::process::exit;
 #[allow(unused_imports)]
 use super::data_types::*;
 use nohash_hasher::{IntMap, IntSet};
+#[cfg(feature = "debug_actors")]
+#[repr(C)]
+#[derive(Default, Debug)]
+pub struct Actor{
+    pub r#type:u32,
+    pub position_on_screen:Vec2
+}
 pub struct GameData {
     pub local_player: u64,
     pub local_team_id: i32,
@@ -18,11 +25,12 @@ pub struct GameData {
     pub angle: f32,
     pub local_position: Vec3,
     pub players: Vec<Player>,
-    pub supplies: Vec<Supply>,
     pub players_set: IntSet<u64>,
     pub non_player_set: IntSet<u64>,
     pub local_team_set: IntSet<u64>,
     pub actor_array: [u64; 2000],
+    #[cfg(feature = "debug_actors")]
+    pub actors:Vec<Actor>,
 }
 
 impl Default for GameData {
@@ -42,11 +50,12 @@ impl Default for GameData {
                 z: 0.0,
             },
             players: Vec::with_capacity(100),   // 使用默认值初始化
-            supplies: Vec::with_capacity(1000), // 初始化 Vec 具有 1000 的容量
             local_team_set: IntSet::default(),
             players_set: IntSet::default(),
             non_player_set: IntSet::default(),
             actor_array: [0; 2000],
+            #[cfg(feature = "debug_actors")]
+            actors:Vec::with_capacity(1000),
         }
     }
 }
@@ -77,7 +86,6 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
     let (actors_addr, actors_count) =
         game_mem.read_with_offsets::<(u64, i32)>(ulevel, offsets::OBJARR);
-
     if actors_count <= 0 || actors_count > 2000 {
         return;
     }
@@ -98,6 +106,9 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
     // let state = game_mem.read_with_offsets::<i32>(game_data.local_player, offsets::WEAPON);
     // println!("{state}");
     game_data.players.clear();
+    #[cfg(feature = "debug_actors")]
+    game_data.actors.clear();
+
 
     game_mem.read_memory_with_length_and_offsets(
         actors_addr,
@@ -108,20 +119,41 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
     for i in 0..actors_count {
         let current_actor = game_data.actor_array[i as usize];
-
-        // if game_data.local_player == current_actor {
-        //     continue;
-        // }
+        #[cfg(feature = "debug_actors")]
+        {
+            let idx:u32 = game_mem.read_with_offsets(current_actor, &[0x18]);
+            let root_comp = game_mem.read_with_offsets::<u64>(current_actor, offsets::ROOT_COMP);
+            let mut actor:Actor=Actor::default();
+            let mut trans: Vec3 = Vec3::default();
+            actor.r#type = idx;
+            
+            game_mem.read_memory_with_offsets(
+                root_comp,
+                &mut trans,
+                offsets::TRANSLATION_IN_TRANSFORM,
+            );
+            
+            world_to_screen_without_depth(&mut actor.position_on_screen,&trans,&game_data.matrix,1200.0,540.0);
+            
+            game_data.actors.push(actor);
+        }
+        if game_data.local_player == current_actor {
+            continue;
+        }
+        
         if game_data.non_player_set.contains(&current_actor) {
             continue;
         }
         if !game_data.players_set.contains(&current_actor) {
             let current_actor_type =
                 game_mem.read_with_offsets::<f32>(current_actor, offsets::DEFAULT_SPEED);
+            
+            //println!("{idx}"); 
             if current_actor_type != 479.5 {
                 game_data.non_player_set.insert(current_actor);
                 continue;
             }
+            
             game_data.players_set.insert(current_actor);
         }
 
@@ -397,6 +429,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
         game_data.players.push(current_player);
     }
+    
 }
 fn get_bone_pos(
     bone_trans: &FTransform,

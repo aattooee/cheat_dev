@@ -11,7 +11,15 @@ static YELLOW: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 0, 191);
 
 pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
     let draw_list = ui.get_background_draw_list();
+    #[cfg(feature = "debug_actors")]
+            {
 
+                for i in &game_data.actors{
+                    let pos = i.position_on_screen.to_pos();
+                    let col = [1.0, 1.0, 1.0];
+                    draw_list.add_text(pos,col,format!("{}",i.r#type));
+                }
+            }
     for player in &game_data.players {
         if player.is_in_screen() {
             let font_scale: f32 = 0.5;
@@ -37,7 +45,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
                 right_ankle,
                 ..
             } = player;
-
+            
             #[cfg(feature = "debug_bones")]
             {
                 for i in &player.bone_debug {
@@ -53,6 +61,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
                 }
             }
             //框
+
             let left = head.position_on_screen.x - width * 0.8;
             let right = head.position_on_screen.x + width * 0.8;
             let mut top = head.position_on_screen.y - width / 3.0;
