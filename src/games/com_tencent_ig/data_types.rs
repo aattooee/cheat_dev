@@ -26,20 +26,20 @@ impl Quat {
             z: self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
         }
     }
-    pub fn multiply_pre(&self,other:&Quat)->Quat{
+    pub fn multiply_pre(&self, other: &Quat) -> Quat {
         Quat {
-            w:   - self.z * other.z,
-            x: self.w * other.x  - self.z * other.y,
-            y: self.w * other.y  + self.z * other.x,
-            z: self.w * other.z  ,
+            w: -self.z * other.z,
+            x: self.w * other.x - self.z * other.y,
+            y: self.w * other.y + self.z * other.x,
+            z: self.w * other.z,
         }
     }
-    pub fn multiply_next(&self,other:&Quat)->Quat{
+    pub fn multiply_next(&self, other: &Quat) -> Quat {
         Quat {
-            w: self.w * other.w  - self.z * other.z,
-            x:   self.x * other.w + self.y * other.z ,
-            y:   self.x * other.z + self.y * other.w ,
-            z: self.w * other.z   + self.z * other.w,
+            w: self.w * other.w - self.z * other.z,
+            x: self.x * other.w + self.y * other.z,
+            y: self.x * other.z + self.y * other.w,
+            z: self.w * other.z + self.z * other.w,
         }
     }
     pub fn rotate_vec(&self, vec: &Vec3) -> Vec3 {
@@ -49,8 +49,8 @@ impl Quat {
             y: vec.y,
             z: vec.z,
         };
-        
-        let rotated_quat = self.multiply_pre(&vec_quat).multiply_next(&self.conjugate());
+
+        let rotated_quat = self.multiply(&vec_quat).multiply(&self.conjugate());
 
         Vec3 {
             x: rotated_quat.x,
@@ -116,7 +116,7 @@ pub struct Player {
     pub width: f32,             // 人物宽度
     pub world_position: Vec3,   // 世界坐标
     pub screen_position: Vec2,  // 屏幕坐标
-    pub depth_in_camera: f32,      // 人物在相机中的深度相机
+    pub depth_in_camera: f32,   // 人物在相机中的深度相机
     pub team_id: i32,           // 队标
     pub action_id: i32,         // 动作
     pub weapon_id: i32,         // 手持
@@ -132,19 +132,33 @@ pub struct Player {
     pub player_name: [u8; 32],   // 玩家名称，字符数组需要转为字节数组
     pub velocity: Vec3,          // 速度
     pub head: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub chest: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub pelvis: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub left_shoulder: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub right_shoulder: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub left_elbow: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub right_elbow: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub left_wrist: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub right_wrist: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub left_thigh: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub right_thigh: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub left_knee: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub right_knee: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub left_ankle: Bone,
+    #[cfg(feature = "draw_all_bones")]
     pub right_ankle: Bone,
     pub ground_contact: Bone,
     #[cfg(feature = "debug_bones")]
@@ -173,7 +187,6 @@ impl Player {
         // 将子切片转换为 &str
         std::str::from_utf8(utf8_slice).expect("Invalid UTF-8 sequence")
     }
-    
 }
 #[repr(C)]
 pub struct Supply {

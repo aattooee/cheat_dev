@@ -1,6 +1,6 @@
-mod imgui_rs_fix;
 mod common;
 mod games;
+mod imgui_rs_fix;
 fn main() {
-   games::com_tencent_ig::run();
+    games::com_tencent_ig::run();
 }

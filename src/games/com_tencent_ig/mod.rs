@@ -7,8 +7,8 @@ mod offsets;
 mod ui;
 
 use crate::common::System;
-use memory_tool_4_cheat::GameMem;
 use data::GameData;
+use memory_tool_4_cheat::GameMem;
 pub fn run() {
     //0.init driver
     let mut game_mem = GameMem::new();
@@ -28,7 +28,7 @@ pub fn run() {
 
     System::new("title")
         .unwrap()
-        .run((), move |run, ui1,frame_rate| {
+        .run((), move |run, ui1, frame_rate| {
             ui::gen_user_interface(run, ui1, frame_rate);
             data::prepare_data(&mut game_mem, &mut game_data);
             esp::esp(ui1, &mut game_data);

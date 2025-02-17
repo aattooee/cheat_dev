@@ -1,7 +1,7 @@
-use imgui::{FontId, StyleVar, Ui};
-use crate::imgui_rs_fix::*;
 use super::data::GameData;
 use super::data_types::*;
+use crate::imgui_rs_fix::*;
+use imgui::{FontId, StyleVar, Ui};
 
 static WHITE_OUTER: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 255, 191);
 static WHITE_INNER: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 255, 12);
@@ -16,6 +16,8 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
         if player.is_in_screen() {
             let font_scale: f32 = 0.8;
 
+            let Player { width, head, .. } = player;
+            #[cfg(feature = "draw_all_bones")]
             let Player {
                 width,
                 head,
@@ -35,6 +37,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
                 right_ankle,
                 ..
             } = player;
+
             #[cfg(feature = "debug_bones")]
             {
                 for i in &player.bone_debug {
@@ -95,7 +98,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
             }
 
             //队伍+距离
-            let distance = format!("[{}]{:.0}m",player.team_id, player.distance_to_player);
+            let distance = format!("[{}]{:.0}m", player.team_id, player.distance_to_player);
             let mut distance_text_size = ui.calc_text_size(&distance);
 
             distance_text_size[0] *= font_scale;
@@ -111,7 +114,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
             );
             top -= distance_text_size[1];
             let name = player.get_name();
-            let mut name_text_size = ui.calc_text_size(&name);
+            let mut name_text_size = ui.calc_text_size(name);
 
             name_text_size[0] *= font_scale;
             name_text_size[1] *= font_scale;

@@ -2,9 +2,11 @@ static mut UE4: u64 = 0;
 static mut OLDUWORLD: u64 = 0;
 static mut OLDULEVEL: u64 = 0;
 static mut OLDGNAME: u64 = 0;
+use std::process::exit;
+
 #[allow(unused_imports)]
 use super::data_types::*;
-use nohash_hasher::{IntSet,IntMap};
+use nohash_hasher::{IntMap, IntSet};
 pub struct GameData {
     pub local_player: u64,
     pub local_team_id: i32,
@@ -54,16 +56,19 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
     let ue4 = unsafe { UE4 };
 
     let uworld = game_mem.read_with_offsets::<u64>(ue4, offsets::UWORLD);
+
     let (mut gname, mut ulevel) = unsafe { (OLDGNAME, OLDULEVEL) };
     unsafe {
         if OLDUWORLD != uworld {
             gname = game_mem.read_with_offsets::<u64>(ue4, offsets::GNAME);
-            ulevel = game_mem.read_with_offsets::<u64>(uworld, offsets::ULEVEL);
+            let ulevel1 = game_mem.read_with_offsets::<u64>(uworld, &[0x48]);
+
+            ulevel = game_mem.read_with_offsets::<u64>(ulevel1, &[0x20]);
 
             game_data.non_player_set.clear();
             game_data.players_set.clear();
             game_data.local_team_set.clear();
-            
+
             OLDUWORLD = uworld;
             OLDGNAME = gname;
             OLDULEVEL = ulevel;
@@ -72,6 +77,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
     let (actors_addr, actors_count) =
         game_mem.read_with_offsets::<(u64, i32)>(ulevel, offsets::OBJARR);
+
     if actors_count <= 0 || actors_count > 2000 {
         return;
     }
@@ -134,18 +140,17 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
             continue;
         }
         let mut current_player = Player::default();
-        
-        //是否同队
-        #[cfg(not(feature = "debug_bones"))]
-        {
-            current_player.team_id = game_mem.read_with_offsets(current_actor, offsets::TEAMID);
-            if current_player.team_id == game_data.local_team_id {
-                game_data.local_team_set.insert(current_actor);
-                continue;
-            }
-        }
 
-        
+        //是否同队
+        // #[cfg(not(feature = "debug_bones"))]
+        // {
+        //     current_player.team_id = game_mem.read_with_offsets(current_actor, offsets::TEAMID);
+        //     if current_player.team_id == game_data.local_team_id {
+        //         game_data.local_team_set.insert(current_actor);
+        //         continue;
+        //     }
+        // }
+
         game_mem.read_memory_with_offsets(
             root_comp,
             &mut current_player.world_position,
@@ -189,7 +194,6 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
             );
         }
 
-
         world_to_screen(
             &mut current_player.screen_position,
             &mut current_player.depth_in_camera,
@@ -211,6 +215,9 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 game_mem.read_with_offsets(current_actor, offsets::C2W_TRANSFORM);
 
             let mut head: FTransform = game_mem.read_with_offsets(mesh, offsets::HEAD);
+            if current_actor == game_data.local_player {
+                println!("{:?}", head.rotation);
+            }
             head.translation.z += 15.0;
             get_bone_pos(
                 &head,
@@ -219,14 +226,6 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 &game_data.matrix,
             );
 
-            let chest: FTransform = game_mem.read_with_offsets(mesh, offsets::CHEST);
-
-            get_bone_pos(
-                &chest,
-                &c2w_trans,
-                &mut current_player.chest,
-                &game_data.matrix,
-            );
             if current_player.max_health != 1000.0 {
                 game_mem.set_additional_offset(48 * 2, true);
             }
@@ -242,6 +241,14 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
 
             #[cfg(feature = "draw_all_bones")]
             {
+                let chest: FTransform = game_mem.read_with_offsets(mesh, offsets::CHEST);
+
+                get_bone_pos(
+                    &chest,
+                    &c2w_trans,
+                    &mut current_player.chest,
+                    &game_data.matrix,
+                );
                 let pelvis: FTransform = game_mem.read_with_offsets(mesh, offsets::PELVIS);
 
                 get_bone_pos(
@@ -367,7 +374,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
             game_mem.un_set_additional_offset();
             #[cfg(feature = "debug_bones")]
             {
-                for i in 1..68 {
+                for i in 1..100 {
                     let bone: FTransform = game_mem.read_with_offsets(mesh, &[0x30 * i as u64]);
                     let mut bone1: Bone = Bone::default();
                     get_bone_pos(&bone, &c2w_trans, &mut bone1, &game_data.matrix);
@@ -401,7 +408,7 @@ fn world_to_screen(
     height: f32,
 ) {
     *camea = matrix[3] * obj.x + matrix[7] * obj.y + matrix[11] * obj.z + matrix[15];
-    if *camea <100.0 {
+    if *camea < 100.0 {
         return;
     }
     bscreen.x = width
