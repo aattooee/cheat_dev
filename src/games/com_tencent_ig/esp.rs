@@ -1,7 +1,7 @@
 use super::data::GameData;
 use super::data_types::*;
 use crate::imgui_rs_fix::*;
-use imgui::{FontId, StyleVar, Ui};
+use imgui::Ui;
 
 static WHITE_OUTER: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 255, 191);
 static WHITE_INNER: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 255, 12);
@@ -14,7 +14,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
 
     for player in &game_data.players {
         if player.is_in_screen() {
-            let font_scale: f32 = 0.8;
+            let font_scale: f32 = 0.5;
 
             let Player { width, head, .. } = player;
             #[cfg(feature = "draw_all_bones")]
@@ -113,7 +113,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
                 distance_text_size[1],
             );
             top -= distance_text_size[1];
-            let name = player.get_name();
+            let name = if player.is_bot {"BOT"}else{player.get_name()};
             let mut name_text_size = ui.calc_text_size(name);
 
             name_text_size[0] *= font_scale;

@@ -27,8 +27,8 @@ define_offsets!(
     ONVEHICLE:[0xe08],//?
     VELOCITYNOTONVEHICLE:[0x1c08, 0x12c],//STCharacterMovementComponent* STCharacterMovement->Vector Velocity;
     VELOCITYONVEHICLE:[0x1330],
-    ISBOT:[0x9d0],//
-    PLAYERNAME:[0x900,0x0],//
+    PLAYERNAME:[0x8f0,0x0],//
+    PLAYERUID:[0x918,0x0],
     C2W_TRANSFORM:[0x498,0x1b0],// SceneComponent.ActorComponent.Object::Vector RelativeScale3D+0xc + 0x8(Transform)//private in pubgm, but public in pubgmhd
     MESH:[0x498,0x878],//
     HEAD:[5 * 0x30],

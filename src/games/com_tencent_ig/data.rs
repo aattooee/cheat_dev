@@ -109,7 +109,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
     for i in 0..actors_count {
         let current_actor = game_data.actor_array[i as usize];
 
-        // if game_data.local_team_set.contains(&current_actor) {
+        // if game_data.local_player == current_actor {
         //     continue;
         // }
         if game_data.non_player_set.contains(&current_actor) {
@@ -159,6 +159,14 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
         if !current_player.position_valid() {
             continue;
         }
+        //距离
+
+        current_player.distance_to_player = game_data
+            .local_position
+            .to_other_distance(&current_player.world_position, 0.01);
+        if current_player.distance_to_player >400.0{
+            continue;
+        }
 
         // //血量
         let (health, max_health) =
@@ -166,11 +174,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
         current_player.health_percentage = health / max_health;
         current_player.max_health = max_health;
 
-        //距离
-
-        current_player.distance_to_player = game_data
-            .local_position
-            .to_other_distance(&current_player.world_position, 0.01);
+        
 
         //头甲包
 
@@ -203,10 +207,18 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
             1200.0,
             540.0,
         );
+        
+        //isbot
+        let mut uid:u16 = 0;
+        
+        game_mem.set_additional_offset(2*5, false);//读取第5个字符，如果非0则是真人
+        game_mem.read_memory_with_offsets(current_actor, &mut uid, offsets::PLAYERUID);
+
+        current_player.is_bot = uid == 0;
+        game_mem.un_set_additional_offset();
         //玩家姓名
         let mut name: [u16; 16] = [0; 16];
         game_mem.read_memory_with_offsets(current_actor, &mut name, offsets::PLAYERNAME);
-
         get_utf8(&mut current_player.player_name, &name);
         // read bones positions
         if current_player.is_in_screen() {
@@ -215,9 +227,7 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 game_mem.read_with_offsets(current_actor, offsets::C2W_TRANSFORM);
 
             let mut head: FTransform = game_mem.read_with_offsets(mesh, offsets::HEAD);
-            if current_actor == game_data.local_player {
-                println!("{:?}", head.rotation);
-            }
+            
             head.translation.z += 15.0;
             get_bone_pos(
                 &head,
@@ -432,7 +442,7 @@ fn world_to_screen_without_depth(
     height: f32,
 ) {
     let camea = matrix[3] * obj.x + matrix[7] * obj.y + matrix[11] * obj.z + matrix[15];
-    if camea < 100.0 {
+    if camea < 30.0 {
         return;
     }
     bscreen.x = width
