@@ -26,22 +26,7 @@ impl Quat {
             z: self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
         }
     }
-    pub fn multiply_pre(&self, other: &Quat) -> Quat {
-        Quat {
-            w: -self.z * other.z,
-            x: self.w * other.x - self.z * other.y,
-            y: self.w * other.y + self.z * other.x,
-            z: self.w * other.z,
-        }
-    }
-    pub fn multiply_next(&self, other: &Quat) -> Quat {
-        Quat {
-            w: self.w * other.w - self.z * other.z,
-            x: self.x * other.w + self.y * other.z,
-            y: self.x * other.z + self.y * other.w,
-            z: self.w * other.z + self.z * other.w,
-        }
-    }
+    
     pub fn rotate_vec(&self, vec: &Vec3) -> Vec3 {
         let vec_quat = Quat {
             w: 0.0,
@@ -190,7 +175,7 @@ impl Player {
     }
 }
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug,Default)]
 pub struct Car {
     pub wheels: [Bone; 2],
     #[cfg(feature = "debug_car")]
@@ -200,16 +185,4 @@ pub struct Car {
     #[cfg(feature = "debug_car")]
     pub car_type: u16,
 }
-impl Default for Car {
-    fn default() -> Self {
-        Self {
-            wheels: Default::default(),
-            #[cfg(feature = "debug_car")]
-            position_on_screen: Default::default(),
-            #[cfg(feature = "debug_car")]
-            debug_bones: Default::default(),
-            #[cfg(feature = "debug_car")]
-            car_type: Default::default(),
-        }
-    }
-}
+

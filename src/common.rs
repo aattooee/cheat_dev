@@ -242,6 +242,7 @@ impl<A: App> System<A> {
             ui_builder(run, ui, frame_rate);
 
             if !(*run) {
+                app.destroy(&vulkan_context);
                 return;
             }
 

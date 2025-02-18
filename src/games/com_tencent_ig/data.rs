@@ -16,13 +16,12 @@ pub struct Actor {
 
 pub struct GameData {
     pub local_player: u64,
-    pub local_team_id: i32,
     pub fov: f32,          // 自身fov
     pub matrix: [f32; 16], // 游戏矩阵
     pub firing: i32,       // 开火判断
     pub aiming: i32,       // 开镜判断
-    pub local_weapon: i32, // 自身手持
-    pub angle: f32,
+    // pub local_weapon: i32, // 自身手持
+    // pub angle: f32,
     pub local_position: Vec3,
     pub players: Vec<Player>,
     pub players_set: IntSet<u64>,
@@ -38,13 +37,12 @@ impl Default for GameData {
     fn default() -> Self {
         Self {
             local_player: 0,
-            local_team_id: 0,
             fov: 0.0,
             matrix: [0.0; 16],
             firing: 0,
             aiming: 0,
-            local_weapon: 0,
-            angle: 0.0,
+            // local_weapon: 0,
+            // angle: 0.0,
             local_position: Vec3 {
                 x: 0.0,
                 y: 0.0,
@@ -103,7 +101,6 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
     game_data.fov = game_mem.read_with_offsets(game_data.local_player, offsets::LOCALFOV);
     game_data.firing = game_mem.read_with_offsets(game_data.local_player, offsets::ISFIRING);
     game_data.aiming = game_mem.read_with_offsets(game_data.local_player, offsets::ISAIMING);
-    game_data.local_team_id = game_mem.read_with_offsets(game_data.local_player, offsets::TEAMID);
 
     // let state = game_mem.read_with_offsets::<i32>(game_data.local_player, offsets::WEAPON);
     // println!("{state}");

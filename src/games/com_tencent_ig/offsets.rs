@@ -22,7 +22,6 @@ define_offsets!(
     ROOT_COMP:[0x1B0],
     STATE:[0xF80],//
     TRANSLATION_IN_TRANSFORM:[0x1C0],
-    TEAMID:[0x938],//
     HEALTH:[0xdc0],//
     ONVEHICLE:[0xe08],//?
     VELOCITY:[0x1c08, 0x12c],//STCharacterMovementComponent* STCharacterMovement->Vector Velocity;

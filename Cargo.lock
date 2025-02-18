@@ -17,8 +17,6 @@ checksum = "4aa90d7ce82d4be67b64039a3d588d38dbcc6736577de4a847025ce5b0c468d1"
 [[package]]
 name = "android_native_window"
 version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45b17ffca963e6ad147608d2c42dab5496b1f191d28757e2668fdb6be02bfbad"
 dependencies = [
  "evdev",
  "imgui",
@@ -725,7 +723,6 @@ name = "memory-tool-4-cheat"
 version = "0.1.0"
 dependencies = [
  "libc",
- "once_cell",
 ]
 
 [[package]]
