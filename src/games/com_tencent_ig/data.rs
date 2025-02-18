@@ -62,11 +62,14 @@ impl Default for GameData {
 use super::offsets;
 use memory_tool_4_cheat::GameMem;
 
-pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
+pub fn prepare_data(
+    game_mem: &mut GameMem,
+    game_data: &mut GameData,
+    win_width: f32,
+    win_height: f32,
+) {
     let ue4 = unsafe { UE4 };
 
-
-    
     game_data.local_player = game_mem.read_with_offsets(ue4, offsets::LOCALPALYER);
     if game_data.local_player == 0 {
         game_data.players.clear();
@@ -75,33 +78,30 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
         game_data.cars.clear();
         return;
     }
-    let  ulevel = game_mem.read_with_offsets(game_data.local_player,&[0x20]);
+    let ulevel = game_mem.read_with_offsets(game_data.local_player, &[0x20]);
     unsafe {
         if ulevel != OLDULEVEL {
             //gname = game_mem.read_with_offsets::<u64>(ue4, offsets::GNAME);
-            
+
             game_data.non_player_set.clear();
             game_data.players_set.clear();
             game_data.local_team_set.clear();
 
             // OLDGNAME = gname;
             OLDULEVEL = ulevel;
-
         }
     }
-    
+
     let (actors_addr, actors_count) =
-        game_mem.read_with_offsets::<(u64,u32)>(ulevel, offsets::OBJARR);
-        //println!("actconmt{}",actors_count);
+        game_mem.read_with_offsets::<(u64, u32)>(ulevel, offsets::OBJARR);
+    //println!("actconmt{}",actors_count);
     if actors_count == 0 || actors_count > 2000 {
-        
         return;
     }
-    
 
     //read local player information
     game_mem.read_memory_with_offsets(ue4, &mut game_data.matrix, offsets::PROJECTIONMATRIX);
-    
+
     game_mem.read_memory_with_offsets(
         game_data.local_player,
         &mut game_data.local_position,
@@ -149,7 +149,14 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 let bone_trans: FTransform =
                     game_mem.read_with_offsets(mesh, &[(0x30 * *wheel_offset as u64)]);
                 let mut bone: Bone = Bone::default();
-                get_bone_pos(&bone_trans, &car_c2w_trans, &mut bone, &game_data.matrix);
+                get_bone_pos(
+                    &bone_trans,
+                    &car_c2w_trans,
+                    &mut bone,
+                    &game_data.matrix,
+                    win_width,
+                    win_height,
+                );
                 car.wheels[idx] = bone;
             }
             #[cfg(feature = "debug_car")]
@@ -158,13 +165,20 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &mut car.position_on_screen,
                     &trans,
                     &game_data.matrix,
-                    1200.0,
-                    540.0,
+                    win_width,
+                    win_height,
                 );
                 for i in 1..=15 {
                     let bone: FTransform = game_mem.read_with_offsets(mesh, &[0x30 * i as u64]);
                     let mut bone1: Bone = Bone::default();
-                    get_bone_pos(&bone, &car_c2w_trans, &mut bone1, &game_data.matrix);
+                    get_bone_pos(
+                        &bone,
+                        &car_c2w_trans,
+                        &mut bone1,
+                        &game_data.matrix,
+                        win_width,
+                        win_height,
+                    );
 
                     bone1.name_for_debug = i.to_string();
                     car.debug_bones.push(bone1);
@@ -191,8 +205,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 &mut actor.position_on_screen,
                 &trans,
                 &game_data.matrix,
-                1200.0,
-                540.0,
+                win_width,
+                win_height,
             );
 
             game_data.actors.push(actor);
@@ -284,8 +298,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
             &mut current_player.width,
             &current_player.world_position,
             &game_data.matrix,
-            1200.0,
-            540.0,
+            win_width,
+            win_height,
         );
 
         //isbot
@@ -314,6 +328,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 &c2w_trans,
                 &mut current_player.head,
                 &game_data.matrix,
+                win_width,
+                win_height,
             );
 
             if current_player.max_health != 1000.0 {
@@ -327,6 +343,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 &c2w_trans,
                 &mut current_player.ground_contact,
                 &game_data.matrix,
+                win_width,
+                win_height,
             );
 
             #[cfg(feature = "draw_all_bones")]
@@ -338,6 +356,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.chest,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
                 let pelvis: FTransform = game_mem.read_with_offsets(mesh, offsets::PELVIS);
 
@@ -346,6 +366,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.pelvis,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let left_shoulder: FTransform =
@@ -356,6 +378,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.left_shoulder,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let right_shoulder: FTransform =
@@ -366,6 +390,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.right_shoulder,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let left_elbow: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_ELBOW);
@@ -375,6 +401,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.left_elbow,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let right_elbow: FTransform =
@@ -385,6 +413,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.right_elbow,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let left_wrist: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_WRIST);
@@ -394,6 +424,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.left_wrist,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let right_wrist: FTransform =
@@ -404,6 +436,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.right_wrist,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let left_thigh: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_THIGH);
@@ -413,6 +447,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.left_thigh,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let right_thigh: FTransform =
@@ -423,6 +459,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.right_thigh,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let left_knee: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_KNEE);
@@ -432,6 +470,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.left_knee,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let right_knee: FTransform = game_mem.read_with_offsets(mesh, offsets::RIGHT_KNEE);
@@ -441,6 +481,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.right_knee,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
                 let left_ankle: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_ANKLE);
 
@@ -449,6 +491,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.left_ankle,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
 
                 let right_ankle: FTransform =
@@ -459,6 +503,8 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                     &c2w_trans,
                     &mut current_player.right_ankle,
                     &game_data.matrix,
+                    win_width,
+                    win_height,
                 );
             }
             game_mem.un_set_additional_offset();
@@ -467,7 +513,14 @@ pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
                 for i in 1..100 {
                     let bone: FTransform = game_mem.read_with_offsets(mesh, &[0x30 * i as u64]);
                     let mut bone1: Bone = Bone::default();
-                    get_bone_pos(&bone, &c2w_trans, &mut bone1, &game_data.matrix);
+                    get_bone_pos(
+                        &bone,
+                        &c2w_trans,
+                        &mut bone1,
+                        &game_data.matrix,
+                        win_width,
+                        win_height,
+                    );
 
                     bone1.name_for_debug = i.to_string();
                     current_player.bone_debug.push(bone1);
@@ -483,10 +536,18 @@ fn get_bone_pos(
     c2w_trans: &FTransform,
     bone: &mut Bone,
     w2s_matrix: &[f32; 16],
+    win_width: f32,
+    win_height: f32,
 ) {
     let v2 = c2w_trans.rotation.rotate_vec(&bone_trans.translation);
     let v3 = c2w_trans.translation.translate(&v2);
-    world_to_screen_without_depth(&mut bone.position_on_screen, &v3, w2s_matrix, 1200.0, 540.0);
+    world_to_screen_without_depth(
+        &mut bone.position_on_screen,
+        &v3,
+        w2s_matrix,
+        win_width,
+        win_height,
+    );
 }
 fn world_to_screen(
     bscreen: &mut Vec2,
@@ -497,6 +558,8 @@ fn world_to_screen(
     width: f32,
     height: f32,
 ) {
+    let width = width / 2.0;
+    let height = height / 2.0;
     *camea = matrix[3] * obj.x + matrix[7] * obj.y + matrix[11] * obj.z + matrix[15];
     if *camea < 100.0 {
         return;
@@ -521,6 +584,8 @@ fn world_to_screen_without_depth(
     width: f32,
     height: f32,
 ) {
+    let width = width / 2.0;
+    let height = height / 2.0;
     let camea = matrix[3] * obj.x + matrix[7] * obj.y + matrix[11] * obj.z + matrix[15];
     if camea < 30.0 {
         return;

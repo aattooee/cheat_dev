@@ -39,7 +39,7 @@ pub struct System<A: App + 'static> {
     image_available_semaphore: vk::Semaphore,
     render_finished_semaphore: vk::Semaphore,
     fence: vk::Fence,
-
+    window: Window,
     pub imgui: Context,
     #[allow(dead_code)]
     pub renderer: Renderer,
@@ -178,6 +178,7 @@ impl<A: App> System<A> {
             fence,
             imgui,
             renderer,
+            window,
         })
     }
 
@@ -194,7 +195,7 @@ impl<A: App> System<A> {
 
     pub fn run<B>(self, mut app: A, mut ui_builder: B) -> Result<(), Box<dyn Error>>
     where
-        B: FnMut(&mut bool, &mut Ui, &mut f64) + 'static,
+        B: FnMut(&mut bool, &mut Ui, &mut f64, f32, f32) + 'static,
     {
         log::info!("Starting application");
 
@@ -212,7 +213,8 @@ impl<A: App> System<A> {
         } = self;
 
         let mut dirty_swapchain = false;
-
+        let win_width = self.window.get_real_width() as f32;
+        let win_height = self.window.get_real_height() as f32;
         // Main loop
         event_loop.run(move |event, delta_ime, run, frame_rate| {
             //handle mouse event and delatime
@@ -239,7 +241,7 @@ impl<A: App> System<A> {
             // platform
 
             let ui = imgui.frame();
-            ui_builder(run, ui, frame_rate);
+            ui_builder(run, ui, frame_rate, win_width, win_height);
 
             if !(*run) {
                 app.destroy(&vulkan_context);

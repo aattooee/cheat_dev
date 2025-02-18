@@ -28,10 +28,13 @@ pub fn run() {
 
     System::new("title")
         .unwrap()
-        .run((), move |run, ui1, frame_rate| {
-            ui::gen_user_interface(run, ui1, frame_rate);
-            data::prepare_data(&mut game_mem, &mut game_data);
-            esp::esp(ui1, &mut game_data);
-        })
+        .run(
+            (),
+            move |run, ui1, frame_rate, window_width, window_height| {
+                ui::gen_user_interface(run, ui1, frame_rate);
+                data::prepare_data(&mut game_mem, &mut game_data, window_width, window_height);
+                esp::esp(ui1, &mut game_data);
+            },
+        )
         .expect("failed");
 }

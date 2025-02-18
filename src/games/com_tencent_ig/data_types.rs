@@ -26,7 +26,7 @@ impl Quat {
             z: self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
         }
     }
-    
+
     pub fn rotate_vec(&self, vec: &Vec3) -> Vec3 {
         let vec_quat = Quat {
             w: 0.0,
@@ -175,7 +175,7 @@ impl Player {
     }
 }
 #[repr(C)]
-#[derive(Debug,Default)]
+#[derive(Debug, Default)]
 pub struct Car {
     pub wheels: [Bone; 2],
     #[cfg(feature = "debug_car")]
@@ -185,4 +185,3 @@ pub struct Car {
     #[cfg(feature = "debug_car")]
     pub car_type: u16,
 }
-
