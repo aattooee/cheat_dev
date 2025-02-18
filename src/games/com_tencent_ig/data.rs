@@ -78,7 +78,7 @@ pub fn prepare_data(
         game_data.cars.clear();
         return;
     }
-    let ulevel = game_mem.read_with_offsets(game_data.local_player, &[0x20]);
+    let ulevel = game_mem.read_with_offsets(game_data.local_player, offsets::OUTER);
     unsafe {
         if ulevel != OLDULEVEL {
             //gname = game_mem.read_with_offsets::<u64>(ue4, offsets::GNAME);
@@ -94,7 +94,7 @@ pub fn prepare_data(
 
     let (actors_addr, actors_count) =
         game_mem.read_with_offsets::<(u64, u32)>(ulevel, offsets::OBJARR);
-    //println!("actconmt{}",actors_count);
+
     if actors_count == 0 || actors_count > 2000 {
         return;
     }
@@ -112,7 +112,7 @@ pub fn prepare_data(
     game_data.aiming = game_mem.read_with_offsets(game_data.local_player, offsets::ISAIMING);
 
     // let state = game_mem.read_with_offsets::<i32>(game_data.local_player, offsets::WEAPON);
-    // println!("{state}");
+
     game_data.players.clear();
     #[cfg(feature = "debug_actors")]
     game_data.actors.clear();
@@ -127,7 +127,7 @@ pub fn prepare_data(
     for i in 0..actors_count {
         let current_actor = game_data.actor_array[i as usize];
 
-        let car_type: u16 = game_mem.read_with_offsets(current_actor, &[0x64c]);
+        let car_type: u16 = game_mem.read_with_offsets(current_actor, offsets::VEHICLETYPE);
         if let Some((_car_name, wheels_offsets)) = offsets::CARS_MAP.get(&car_type) {
             let root_comp = game_mem.read_with_offsets::<u64>(current_actor, offsets::ROOT_COMP);
             let mut car = Car {
@@ -143,8 +143,8 @@ pub fn prepare_data(
             );
 
             let car_c2w_trans: FTransform =
-                game_mem.read_with_offsets(current_actor, &[0xaf8, 0x1b0]);
-            let mesh: u64 = game_mem.read_with_offsets(current_actor, &[0xaf8, 0x878]);
+                game_mem.read_with_offsets(current_actor, offsets::CAR_C2W_TRANSFORM);
+            let mesh: u64 = game_mem.read_with_offsets(current_actor, offsets::CAR_MESH);
             for (idx, wheel_offset) in wheels_offsets.iter().enumerate().take(2) {
                 let bone_trans: FTransform =
                     game_mem.read_with_offsets(mesh, &[(0x30 * *wheel_offset as u64)]);
@@ -222,7 +222,6 @@ pub fn prepare_data(
             let current_actor_type =
                 game_mem.read_with_offsets::<f32>(current_actor, offsets::DEFAULT_SPEED);
 
-            //println!("{idx}");
             if current_actor_type != 479.5 {
                 game_data.non_player_set.insert(current_actor);
                 continue;
@@ -333,7 +332,7 @@ pub fn prepare_data(
             );
 
             if current_player.max_health != 1000.0 {
-                game_mem.set_additional_offset(48 * 2, true);
+                game_mem.set_additional_offset(0x30 * 2, true);
             }
 
             let ground_contact: FTransform =

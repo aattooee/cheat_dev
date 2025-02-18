@@ -9,8 +9,9 @@ macro_rules! define_offsets {
 
 define_offsets!(
     // UWORLD: [0xDC02408],//
-    GNAME: [0xC4444F0, 0x120],
-    ULEVEL: [0x48,0x20],//
+    // GNAME: [0xC4444F0, 0x120],
+    // ULEVEL: [0x48,0x20],
+    OUTER:[0x20],
     OBJARR: [0xB0],//
     PROJECTIONMATRIX: [0xDC0A1C0, 0x20, 0x270], //
     LOCALPALYER: [0xDCAB858, 0x8, 0x48,0x20],//
@@ -24,12 +25,15 @@ define_offsets!(
     TRANSLATION_IN_TRANSFORM:[0x1C0],
     HEALTH:[0xdc0],//
     ONVEHICLE:[0xe08],//?
+    VEHICLETYPE:[0x64c],
     VELOCITY:[0x1c08, 0x12c],//STCharacterMovementComponent* STCharacterMovement->Vector Velocity;
     VELOCITYONVEHICLE:[0x18b8,0x12c],//STExtraWheeledVehicle.STExtraVehicleBase.Pawn.Actor.Object::STExtraVehicleMovementComponent4W* VehicleMovement->Vector Velocity;
     PLAYERNAME:[0x8f0,0x0],//
     PLAYERUID:[0x918,0x0],
     C2W_TRANSFORM:[0x498,0x1b0],// SceneComponent.ActorComponent.Object::Vector RelativeScale3D+0xc + 0x8(Transform)//private in pubgm, but public in pubgmhd
     MESH:[0x498,0x878],//
+    CAR_C2W_TRANSFORM:[0xaf8, 0x1b0],
+    CAR_MESH:[0xaf8, 0x878],
     HEAD:[5 * 0x30],
     CHEST:[4* 0x30],
     PELVIS:[48],
