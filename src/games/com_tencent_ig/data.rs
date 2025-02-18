@@ -1,7 +1,7 @@
 static mut UE4: u64 = 0;
-static mut OLDUWORLD: u64 = 0;
+//static mut OLDUWORLD: u64 = 0;
 static mut OLDULEVEL: u64 = 0;
-static mut OLDGNAME: u64 = 0;
+//static mut OLDGNAME: u64 = 0;
 
 #[allow(unused_imports)]
 use super::data_types::*;
@@ -61,38 +61,47 @@ impl Default for GameData {
 }
 use super::offsets;
 use memory_tool_4_cheat::GameMem;
+
 pub fn prepare_data(game_mem: &mut GameMem, game_data: &mut GameData) {
     let ue4 = unsafe { UE4 };
 
-    let uworld = game_mem.read_with_offsets::<u64>(ue4, offsets::UWORLD);
 
-    let (mut gname, mut ulevel) = unsafe { (OLDGNAME, OLDULEVEL) };
+    
+    game_data.local_player = game_mem.read_with_offsets(ue4, offsets::LOCALPALYER);
+    if game_data.local_player == 0 {
+        game_data.players.clear();
+        #[cfg(feature = "debug_actors")]
+        game_data.actors.clear();
+        game_data.cars.clear();
+        return;
+    }
+    let  ulevel = game_mem.read_with_offsets(game_data.local_player,&[0x20]);
     unsafe {
-        if OLDUWORLD != uworld {
-            gname = game_mem.read_with_offsets::<u64>(ue4, offsets::GNAME);
-            let ulevel1 = game_mem.read_with_offsets::<u64>(uworld, &[0x48]);
-
-            ulevel = game_mem.read_with_offsets::<u64>(ulevel1, &[0x20]);
-
+        if ulevel != OLDULEVEL {
+            //gname = game_mem.read_with_offsets::<u64>(ue4, offsets::GNAME);
+            
             game_data.non_player_set.clear();
             game_data.players_set.clear();
             game_data.local_team_set.clear();
 
-            OLDUWORLD = uworld;
-            OLDGNAME = gname;
+            // OLDGNAME = gname;
             OLDULEVEL = ulevel;
+
         }
     }
-
+    
     let (actors_addr, actors_count) =
-        game_mem.read_with_offsets::<(u64, i32)>(ulevel, offsets::OBJARR);
-    if actors_count <= 0 || actors_count > 2000 {
+        game_mem.read_with_offsets::<(u64,u32)>(ulevel, offsets::OBJARR);
+        //println!("actconmt{}",actors_count);
+    if actors_count == 0 || actors_count > 2000 {
+        
         return;
     }
+    
 
     //read local player information
     game_mem.read_memory_with_offsets(ue4, &mut game_data.matrix, offsets::PROJECTIONMATRIX);
-    game_data.local_player = game_mem.read_with_offsets(ue4, offsets::LOCALPALYER);
+    
     game_mem.read_memory_with_offsets(
         game_data.local_player,
         &mut game_data.local_position,
