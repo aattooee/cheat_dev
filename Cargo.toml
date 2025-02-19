@@ -29,6 +29,7 @@ debug_bones =[]
 draw_all_bones=[]
 debug_actors = []
 debug_car =[]
+debug_self =[]
 
 # [profile.release]
 # opt-level = "z"

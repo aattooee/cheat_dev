@@ -24,6 +24,7 @@ define_offsets!(
     STATE:[0xF80],//
     TRANSLATION_IN_TRANSFORM:[0x1C0],
     HEALTH:[0xdc0],//
+    TEAMID:[0x938],//
     ONVEHICLE:[0xe08],//?
     VEHICLETYPE:[0x64c],
     VELOCITY:[0x1c08, 0x12c],//STCharacterMovementComponent* STCharacterMovement->Vector Velocity;
@@ -34,22 +35,22 @@ define_offsets!(
     MESH:[0x498,0x878],//
     CAR_C2W_TRANSFORM:[0xaf8, 0x1b0],
     CAR_MESH:[0xaf8, 0x878],
-    HEAD:[5 * 0x30],
-    CHEST:[4* 0x30],
+    HEAD:[5 * 0x30 + 0x10],
+    CHEST:[4* 0x30 + 0x10],
     PELVIS:[48],
-    LEFT_SHOULDER:[(14) * 0x30],
-    RIGHT_SHOULDER:[(35) * 0x30],
-    LEFT_ELBOW:[(15) * 0x30],
-    RIGHT_ELBOW:[(36)* 0x30],
-    LEFT_WRIST:[(16) * 0x30],
-    RIGHT_WRIST:[(54)* 0x30],
-    LEFT_THIGH:[(55) * 0x30],
-    RIGTH_THIGH:[(59) * 0x30],
-    LEFT_KNEE:[(56) * 0x30],
-    RIGHT_KNEE:[(60) * 0x30],
-    LEFT_ANKLE:[(57) * 0x30],
-    RIGHT_ANKLE:[(61) * 0x30],
-    GROUND_CONTACT:[67],
+    LEFT_SHOULDER:[(14) * 0x30 + 0x10],
+    RIGHT_SHOULDER:[(35) * 0x30 + 0x10],
+    LEFT_ELBOW:[(15) * 0x30 + 0x10],
+    RIGHT_ELBOW:[(36)* 0x30 + 0x10],
+    LEFT_WRIST:[(16) * 0x30 + 0x10],
+    RIGHT_WRIST:[(54)* 0x30 + 0x10],
+    LEFT_THIGH:[(55) * 0x30 + 0x10],
+    RIGTH_THIGH:[(59) * 0x30 + 0x10],
+    LEFT_KNEE:[(56) * 0x30 + 0x10],
+    RIGHT_KNEE:[(60) * 0x30 + 0x10],
+    LEFT_ANKLE:[(57) * 0x30 + 0x10],
+    RIGHT_ANKLE:[(61) * 0x30 + 0x10],
+    GROUND_CONTACT:[67 + 0x10],
     WEAPON:[0x22B8, 0x500, 0x838, 0x178]
 
 

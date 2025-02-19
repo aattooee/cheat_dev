@@ -16,10 +16,11 @@ pub struct Actor {
 
 pub struct GameData {
     pub local_player: u64,
-    pub fov: f32,          // 自身fov
+    pub local_team_id:i32,
+    // pub fov: f32,          // 自身fov
     pub matrix: [f32; 16], // 游戏矩阵
-    pub firing: i32,       // 开火判断
-    pub aiming: i32,       // 开镜判断
+    // pub firing: i32,       // 开火判断
+    // pub aiming: i32,       // 开镜判断
     // pub local_weapon: i32, // 自身手持
     // pub angle: f32,
     pub local_position: Vec3,
@@ -37,10 +38,11 @@ impl Default for GameData {
     fn default() -> Self {
         Self {
             local_player: 0,
-            fov: 0.0,
+            local_team_id:-1,
+            // fov: 0.0,
             matrix: [0.0; 16],
-            firing: 0,
-            aiming: 0,
+            // firing: 0,
+            // aiming: 0,
             // local_weapon: 0,
             // angle: 0.0,
             local_position: Vec3 {
@@ -86,7 +88,7 @@ pub fn prepare_data(
             game_data.non_player_set.clear();
             game_data.players_set.clear();
             game_data.local_team_set.clear();
-
+            game_data.local_team_id = game_mem.read_with_offsets(game_data.local_player, offsets::TEAMID);
             // OLDGNAME = gname;
             OLDULEVEL = ulevel;
         }
@@ -107,10 +109,9 @@ pub fn prepare_data(
         &mut game_data.local_position,
         offsets::PLAYERPOSITION,
     );
-    game_data.fov = game_mem.read_with_offsets(game_data.local_player, offsets::LOCALFOV);
-    game_data.firing = game_mem.read_with_offsets(game_data.local_player, offsets::ISFIRING);
-    game_data.aiming = game_mem.read_with_offsets(game_data.local_player, offsets::ISAIMING);
-
+    // game_data.fov = game_mem.read_with_offsets(game_data.local_player, offsets::LOCALFOV);
+    // game_data.firing = game_mem.read_with_offsets(game_data.local_player, offsets::ISFIRING);
+    // game_data.aiming = game_mem.read_with_offsets(game_data.local_player, offsets::ISAIMING);
     // let state = game_mem.read_with_offsets::<i32>(game_data.local_player, offsets::WEAPON);
 
     game_data.players.clear();
@@ -146,8 +147,8 @@ pub fn prepare_data(
                 game_mem.read_with_offsets(current_actor, offsets::CAR_C2W_TRANSFORM);
             let mesh: u64 = game_mem.read_with_offsets(current_actor, offsets::CAR_MESH);
             for (idx, wheel_offset) in wheels_offsets.iter().enumerate().take(2) {
-                let bone_trans: FTransform =
-                    game_mem.read_with_offsets(mesh, &[(0x30 * *wheel_offset as u64)]);
+                let bone_trans: Vec3 =
+                    game_mem.read_with_offsets(mesh, &[(0x30 * *wheel_offset as u64 + 0x10)]);
                 let mut bone: Bone = Bone::default();
                 get_bone_pos(
                     &bone_trans,
@@ -169,7 +170,7 @@ pub fn prepare_data(
                     win_height,
                 );
                 for i in 1..=15 {
-                    let bone: FTransform = game_mem.read_with_offsets(mesh, &[0x30 * i as u64]);
+                    let bone: Vec3 = game_mem.read_with_offsets(mesh, &[0x30 * i as u64 + 0x10]);
                     let mut bone1: Bone = Bone::default();
                     get_bone_pos(
                         &bone,
@@ -212,9 +213,15 @@ pub fn prepare_data(
             game_data.actors.push(actor);
         }
         if game_data.local_player == current_actor {
+            #[cfg(feature = "debug_self")]
+            {
+                
+            }
             continue;
         }
-
+        if game_data.local_team_set.contains(&current_actor){
+            continue;
+        }
         if game_data.non_player_set.contains(&current_actor) {
             continue;
         }
@@ -228,6 +235,15 @@ pub fn prepare_data(
             }
 
             game_data.players_set.insert(current_actor);
+        }
+        let mut current_player = Player::default();
+        //队号
+        let team_id:i32 = game_mem.read_with_offsets(current_actor, offsets::TEAMID);
+        if team_id == game_data.local_team_id{
+            game_data.local_team_set.insert(current_actor);
+            continue;
+        }else{
+            current_player.team_id = team_id;
         }
 
         //读取玩家信息
@@ -244,7 +260,7 @@ pub fn prepare_data(
         if state == 262144 || state == 262152 {
             continue;
         }
-        let mut current_player = Player::default();
+        
 
         game_mem.read_memory_with_offsets(
             root_comp,
@@ -268,7 +284,8 @@ pub fn prepare_data(
             game_mem.read_with_offsets::<(f32, f32)>(current_actor, offsets::HEALTH);
         current_player.health_percentage = health / max_health;
         current_player.max_health = max_health;
-
+        
+        
         //头甲包
 
         //手持武器，子弹数量，最大子弹数量，人物姿态
@@ -319,9 +336,9 @@ pub fn prepare_data(
             let c2w_trans: FTransform =
                 game_mem.read_with_offsets(current_actor, offsets::C2W_TRANSFORM);
 
-            let mut head: FTransform = game_mem.read_with_offsets(mesh, offsets::HEAD);
+            let mut head: Vec3 = game_mem.read_with_offsets(mesh, offsets::HEAD);
 
-            head.translation.z += 15.0;
+            head.z += 15.0;
             get_bone_pos(
                 &head,
                 &c2w_trans,
@@ -335,7 +352,7 @@ pub fn prepare_data(
                 game_mem.set_additional_offset(0x30 * 2, true);
             }
 
-            let ground_contact: FTransform =
+            let ground_contact: Vec3 =
                 game_mem.read_with_offsets(mesh, offsets::GROUND_CONTACT);
             get_bone_pos(
                 &ground_contact,
@@ -348,7 +365,7 @@ pub fn prepare_data(
 
             #[cfg(feature = "draw_all_bones")]
             {
-                let chest: FTransform = game_mem.read_with_offsets(mesh, offsets::CHEST);
+                let chest: Vec3 = game_mem.read_with_offsets(mesh, offsets::CHEST);
 
                 get_bone_pos(
                     &chest,
@@ -358,7 +375,7 @@ pub fn prepare_data(
                     win_width,
                     win_height,
                 );
-                let pelvis: FTransform = game_mem.read_with_offsets(mesh, offsets::PELVIS);
+                let pelvis: Vec3 = game_mem.read_with_offsets(mesh, offsets::PELVIS);
 
                 get_bone_pos(
                     &pelvis,
@@ -369,7 +386,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let left_shoulder: FTransform =
+                let left_shoulder: Vec3 =
                     game_mem.read_with_offsets(mesh, offsets::LEFT_SHOULDER);
 
                 get_bone_pos(
@@ -381,7 +398,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_shoulder: FTransform =
+                let right_shoulder: Vec3 =
                     game_mem.read_with_offsets(mesh, offsets::RIGHT_SHOULDER);
 
                 get_bone_pos(
@@ -393,7 +410,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let left_elbow: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_ELBOW);
+                let left_elbow: Vec3 = game_mem.read_with_offsets(mesh, offsets::LEFT_ELBOW);
 
                 get_bone_pos(
                     &left_elbow,
@@ -404,7 +421,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_elbow: FTransform =
+                let right_elbow: Vec3 =
                     game_mem.read_with_offsets(mesh, offsets::RIGHT_ELBOW);
 
                 get_bone_pos(
@@ -416,7 +433,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let left_wrist: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_WRIST);
+                let left_wrist: Vec3 = game_mem.read_with_offsets(mesh, offsets::LEFT_WRIST);
 
                 get_bone_pos(
                     &left_wrist,
@@ -427,7 +444,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_wrist: FTransform =
+                let right_wrist: Vec3 =
                     game_mem.read_with_offsets(mesh, offsets::RIGHT_WRIST);
 
                 get_bone_pos(
@@ -439,7 +456,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let left_thigh: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_THIGH);
+                let left_thigh: Vec3 = game_mem.read_with_offsets(mesh, offsets::LEFT_THIGH);
 
                 get_bone_pos(
                     &left_thigh,
@@ -450,7 +467,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_thigh: FTransform =
+                let right_thigh: Vec3 =
                     game_mem.read_with_offsets(mesh, offsets::RIGTH_THIGH);
 
                 get_bone_pos(
@@ -462,7 +479,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let left_knee: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_KNEE);
+                let left_knee: Vec3 = game_mem.read_with_offsets(mesh, offsets::LEFT_KNEE);
 
                 get_bone_pos(
                     &left_knee,
@@ -473,7 +490,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_knee: FTransform = game_mem.read_with_offsets(mesh, offsets::RIGHT_KNEE);
+                let right_knee: Vec3 = game_mem.read_with_offsets(mesh, offsets::RIGHT_KNEE);
 
                 get_bone_pos(
                     &right_knee,
@@ -483,7 +500,7 @@ pub fn prepare_data(
                     win_width,
                     win_height,
                 );
-                let left_ankle: FTransform = game_mem.read_with_offsets(mesh, offsets::LEFT_ANKLE);
+                let left_ankle: Vec3 = game_mem.read_with_offsets(mesh, offsets::LEFT_ANKLE);
 
                 get_bone_pos(
                     &left_ankle,
@@ -494,7 +511,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_ankle: FTransform =
+                let right_ankle: Vec3 =
                     game_mem.read_with_offsets(mesh, offsets::RIGHT_ANKLE);
 
                 get_bone_pos(
@@ -510,7 +527,7 @@ pub fn prepare_data(
             #[cfg(feature = "debug_bones")]
             {
                 for i in 1..100 {
-                    let bone: FTransform = game_mem.read_with_offsets(mesh, &[0x30 * i as u64]);
+                    let bone: Vec3 = game_mem.read_with_offsets(mesh, &[0x30 * i as u64]);
                     let mut bone1: Bone = Bone::default();
                     get_bone_pos(
                         &bone,
@@ -531,14 +548,14 @@ pub fn prepare_data(
     }
 }
 fn get_bone_pos(
-    bone_trans: &FTransform,
+    bone_translation: &Vec3,
     c2w_trans: &FTransform,
     bone: &mut Bone,
     w2s_matrix: &[f32; 16],
     win_width: f32,
     win_height: f32,
 ) {
-    let v2 = c2w_trans.rotation.rotate_vec(&bone_trans.translation);
+    let v2 = c2w_trans.rotation.rotate_vec(bone_translation);
     let v3 = c2w_trans.translation.translate(&v2);
     world_to_screen_without_depth(
         &mut bone.position_on_screen,

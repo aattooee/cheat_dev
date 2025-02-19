@@ -43,7 +43,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
     }
     for player in &game_data.players {
         if player.is_in_screen() {
-            let font_scale: f32 = 0.5;
+            let font_scale: f32 = 0.8;
 
             let Player { width, head, .. } = player;
             #[cfg(feature = "draw_all_bones")]
@@ -127,8 +127,8 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
                     .build();
             }
 
-            //距离
-            let distance = format!("{:.0}m", player.distance_to_player);
+            //距离 队号
+            let distance = format!("[{}]{:.0}m",player.team_id, player.distance_to_player);
             let mut distance_text_size = ui.calc_text_size(&distance);
 
             distance_text_size[0] *= font_scale;
