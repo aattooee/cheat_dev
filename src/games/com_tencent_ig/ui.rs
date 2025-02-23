@@ -4,7 +4,7 @@ use imgui::Ui;
 pub fn gen_user_interface(opened: &mut bool, ui: &mut Ui, frame_rate: &mut f64) {
     ui.window("YLESP")
         .opened(opened)
-        .size([440.0, 320.0], Condition::FirstUseEver)
+        .size([560.0, 320.0], Condition::FirstUseEver)
         .build(|| {
             ui.separator();
             ui.text("chose:");

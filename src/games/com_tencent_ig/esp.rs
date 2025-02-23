@@ -10,8 +10,15 @@ static GREEN_INNER: imgui::ImColor32 = imgui::ImColor32::from_rgba(0, 255, 0, 12
 static YELLOW: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 0, 191);
 static WHEEL: imgui::ImColor32 = imgui::ImColor32::from_rgba(255, 255, 66, 100);
 
-pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
+pub fn esp(ui: &mut Ui, game_data: &mut GameData, win_width: f32, win_height: f32) {
     let draw_list = ui.get_background_draw_list();
+    //游戏状态
+    draw_list.add_text_with_font_size(
+        [win_width / 2.0, win_height - 100.0],
+        YELLOW,
+        format!("{:?}", game_data.game_state),
+        39.0,
+    );
     #[cfg(feature = "debug_actors")]
     {
         for i in &game_data.actors {
@@ -128,7 +135,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
             }
 
             //距离 队号
-            let distance = format!("[{}]{:.0}m",player.team_id, player.distance_to_player);
+            let distance = format!("[{}]{:.0}m", player.team_id, player.distance_to_player);
             let mut distance_text_size = ui.calc_text_size(&distance);
 
             distance_text_size[0] *= font_scale;
@@ -164,7 +171,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData) {
             //射线
             draw_list
                 .add_line(
-                    [1200.0, 100.0],
+                    [win_width / 2.0, 100.0],
                     [head.position_on_screen.x, top - name_text_size[1]],
                     WHITE_OUTER,
                 )

@@ -8,13 +8,14 @@ macro_rules! define_offsets {
 }
 
 define_offsets!(
-    // UWORLD: [0xDC02408],//
-    // GNAME: [0xC4444F0, 0x120],
+    UWORLD: [0xDC09CF0],//
+    // GNAME: [D8F2258],
     // ULEVEL: [0x48,0x20],
     OUTER:[0x20],
     OBJARR: [0xB0],//
     PROJECTIONMATRIX: [0xDC0A1C0, 0x20, 0x270], //
-    LOCALPALYER: [0xDCAB858, 0x8, 0x48,0x20],//
+    LOCALPAWN: [0xDCAB858,0x8,0x48,0x20],//
+    PLAYERCONTROLLER: [0x470],
     PLAYERPOSITION: [0x1b0,0x1c0],//Actor.Object::SceneComponent* RootComponent->Vector RelativeScale3D +0xc + 0x8(Transform) +0x10(Transform.translation) ;
     LOCALFOV: [0xCF67840, 0x108, 0x4D4],
     ISFIRING:[0x1608],
@@ -25,6 +26,7 @@ define_offsets!(
     TRANSLATION_IN_TRANSFORM:[0x1C0],
     HEALTH:[0xdc0],//
     TEAMID:[0x938],//
+    DEAD:[0xddc],
     ONVEHICLE:[0xe08],//?
     VEHICLETYPE:[0x64c],
     VELOCITY:[0x1c08, 0x12c],//STCharacterMovementComponent* STCharacterMovement->Vector Velocity;

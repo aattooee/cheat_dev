@@ -15,8 +15,10 @@ pub struct Actor {
 }
 
 pub struct GameData {
+    pub game_state: GameState,
+    pub local_pawn: u64,
     pub local_player: u64,
-    pub local_team_id:i32,
+    pub local_team_id: i32,
     // pub fov: f32,          // 自身fov
     pub matrix: [f32; 16], // 游戏矩阵
     // pub firing: i32,       // 开火判断
@@ -28,17 +30,24 @@ pub struct GameData {
     pub players_set: IntSet<u64>,
     pub non_player_set: IntSet<u64>,
     pub local_team_set: IntSet<u64>,
-    pub actor_array: [u64; 2000],
+    pub actor_array: [u64; 10000],
     pub cars: Vec<Car>,
     #[cfg(feature = "debug_actors")]
     pub actors: Vec<Actor>,
 }
-
+#[derive(Debug)]
+pub enum GameState {
+    InLobby,
+    Gaming,
+    Spectating,
+}
 impl Default for GameData {
     fn default() -> Self {
         Self {
+            game_state: GameState::InLobby,
+            local_pawn: 0,
             local_player: 0,
-            local_team_id:-1,
+            local_team_id: -1,
             // fov: 0.0,
             matrix: [0.0; 16],
             // firing: 0,
@@ -54,7 +63,7 @@ impl Default for GameData {
             local_team_set: IntSet::default(),
             players_set: IntSet::default(),
             non_player_set: IntSet::default(),
-            actor_array: [0; 2000],
+            actor_array: [0; 10000],
             cars: Vec::with_capacity(100),
             #[cfg(feature = "debug_actors")]
             actors: Vec::with_capacity(1000),
@@ -71,16 +80,50 @@ pub fn prepare_data(
     win_height: f32,
 ) {
     let ue4 = unsafe { UE4 };
-
-    game_data.local_player = game_mem.read_with_offsets(ue4, offsets::LOCALPALYER);
+    //first time to get player_controller
     if game_data.local_player == 0 {
-        game_data.players.clear();
-        #[cfg(feature = "debug_actors")]
-        game_data.actors.clear();
-        game_data.cars.clear();
-        return;
+        let local_pawn = game_mem.read_with_offsets(ue4, offsets::LOCALPAWN);
+        if local_pawn == 0 {
+            return;
+        }
+        let ulevel = game_mem.read_with_offsets(local_pawn, offsets::OUTER);
+
+        let game_instance: u64 = game_mem.read_with_offsets(ulevel, &[0x20, 0x220]);
+        let elocalplayer: u64 = game_mem.read_with_offsets(game_instance, &[0x38, 0x0]);
+        let key: u64 = game_mem.read_with_offsets(game_instance, &[0x108]);
+        game_data.local_player = elocalplayer ^ key;
     }
-    let ulevel = game_mem.read_with_offsets(game_data.local_player, offsets::OUTER);
+    // already got local_player
+    let local_controller: u64 = game_mem.read_with_offsets(game_data.local_player, &[0x30]);
+    if local_controller == 0 {
+        //可能退出游戏
+        let local_pawn: u64 = game_mem.read_with_offsets(ue4, offsets::LOCALPAWN);
+        if local_pawn == 0 {
+            //确定退出游戏
+            game_data.players.clear();
+            #[cfg(feature = "debug_actors")]
+            game_data.actors.clear();
+            game_data.cars.clear();
+            game_data.local_player = 0;
+            game_data.game_state = GameState::InLobby;
+            return;
+        }
+    }
+    let mut target_pawn = game_mem.read_with_offsets(local_controller, &[0x4b0]);
+
+    // 如果目标人物为0，表示处于观战状态
+    if target_pawn == 0 || game_mem.read_with_offsets::<bool>(target_pawn, offsets::DEAD) {
+        // 读取viewTarget
+        target_pawn = game_mem.read_with_offsets(local_controller, &[0x4d0, 0x1030]);
+        game_data.game_state = GameState::Spectating;
+    } else {
+        game_data.game_state = GameState::Gaming;
+    }
+
+    game_data.local_pawn = target_pawn;
+
+    let ulevel = game_mem.read_with_offsets(game_data.local_pawn, offsets::OUTER);
+
     unsafe {
         if ulevel != OLDULEVEL {
             //gname = game_mem.read_with_offsets::<u64>(ue4, offsets::GNAME);
@@ -88,16 +131,16 @@ pub fn prepare_data(
             game_data.non_player_set.clear();
             game_data.players_set.clear();
             game_data.local_team_set.clear();
-            game_data.local_team_id = game_mem.read_with_offsets(game_data.local_player, offsets::TEAMID);
+            let local_pawn: u64 = game_mem.read_with_offsets(ue4, offsets::LOCALPAWN);
+            game_data.local_team_id = game_mem.read_with_offsets(local_pawn, offsets::TEAMID);
             // OLDGNAME = gname;
             OLDULEVEL = ulevel;
         }
     }
 
     let (actors_addr, actors_count) =
-        game_mem.read_with_offsets::<(u64, u32)>(ulevel, offsets::OBJARR);
-
-    if actors_count == 0 || actors_count > 2000 {
+        game_mem.read_with_offsets::<(u64, i32)>(ulevel, offsets::OBJARR);
+    if actors_count == 0 || actors_count > 10000 {
         return;
     }
 
@@ -105,7 +148,7 @@ pub fn prepare_data(
     game_mem.read_memory_with_offsets(ue4, &mut game_data.matrix, offsets::PROJECTIONMATRIX);
 
     game_mem.read_memory_with_offsets(
-        game_data.local_player,
+        game_data.local_pawn,
         &mut game_data.local_position,
         offsets::PLAYERPOSITION,
     );
@@ -212,14 +255,13 @@ pub fn prepare_data(
 
             game_data.actors.push(actor);
         }
-        if game_data.local_player == current_actor {
+
+        if game_data.local_pawn == current_actor {
             #[cfg(feature = "debug_self")]
-            {
-                
-            }
+            {}
             continue;
         }
-        if game_data.local_team_set.contains(&current_actor){
+        if game_data.local_team_set.contains(&current_actor) {
             continue;
         }
         if game_data.non_player_set.contains(&current_actor) {
@@ -237,12 +279,17 @@ pub fn prepare_data(
             game_data.players_set.insert(current_actor);
         }
         let mut current_player = Player::default();
+        //是否死亡
+        let dead: bool = game_mem.read_with_offsets(current_actor, offsets::DEAD);
+        if dead {
+            continue;
+        }
         //队号
-        let team_id:i32 = game_mem.read_with_offsets(current_actor, offsets::TEAMID);
-        if team_id == game_data.local_team_id{
+        let team_id: i32 = game_mem.read_with_offsets(current_actor, offsets::TEAMID);
+        if team_id == game_data.local_team_id {
             game_data.local_team_set.insert(current_actor);
             continue;
-        }else{
+        } else {
             current_player.team_id = team_id;
         }
 
@@ -260,7 +307,6 @@ pub fn prepare_data(
         if state == 262144 || state == 262152 {
             continue;
         }
-        
 
         game_mem.read_memory_with_offsets(
             root_comp,
@@ -284,8 +330,7 @@ pub fn prepare_data(
             game_mem.read_with_offsets::<(f32, f32)>(current_actor, offsets::HEALTH);
         current_player.health_percentage = health / max_health;
         current_player.max_health = max_health;
-        
-        
+
         //头甲包
 
         //手持武器，子弹数量，最大子弹数量，人物姿态
@@ -352,8 +397,7 @@ pub fn prepare_data(
                 game_mem.set_additional_offset(0x30 * 2, true);
             }
 
-            let ground_contact: Vec3 =
-                game_mem.read_with_offsets(mesh, offsets::GROUND_CONTACT);
+            let ground_contact: Vec3 = game_mem.read_with_offsets(mesh, offsets::GROUND_CONTACT);
             get_bone_pos(
                 &ground_contact,
                 &c2w_trans,
@@ -386,8 +430,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let left_shoulder: Vec3 =
-                    game_mem.read_with_offsets(mesh, offsets::LEFT_SHOULDER);
+                let left_shoulder: Vec3 = game_mem.read_with_offsets(mesh, offsets::LEFT_SHOULDER);
 
                 get_bone_pos(
                     &left_shoulder,
@@ -421,8 +464,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_elbow: Vec3 =
-                    game_mem.read_with_offsets(mesh, offsets::RIGHT_ELBOW);
+                let right_elbow: Vec3 = game_mem.read_with_offsets(mesh, offsets::RIGHT_ELBOW);
 
                 get_bone_pos(
                     &right_elbow,
@@ -444,8 +486,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_wrist: Vec3 =
-                    game_mem.read_with_offsets(mesh, offsets::RIGHT_WRIST);
+                let right_wrist: Vec3 = game_mem.read_with_offsets(mesh, offsets::RIGHT_WRIST);
 
                 get_bone_pos(
                     &right_wrist,
@@ -467,8 +508,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_thigh: Vec3 =
-                    game_mem.read_with_offsets(mesh, offsets::RIGTH_THIGH);
+                let right_thigh: Vec3 = game_mem.read_with_offsets(mesh, offsets::RIGTH_THIGH);
 
                 get_bone_pos(
                     &right_thigh,
@@ -511,8 +551,7 @@ pub fn prepare_data(
                     win_height,
                 );
 
-                let right_ankle: Vec3 =
-                    game_mem.read_with_offsets(mesh, offsets::RIGHT_ANKLE);
+                let right_ankle: Vec3 = game_mem.read_with_offsets(mesh, offsets::RIGHT_ANKLE);
 
                 get_bone_pos(
                     &right_ankle,
