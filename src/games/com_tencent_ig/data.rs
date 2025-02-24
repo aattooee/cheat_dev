@@ -196,7 +196,6 @@ pub fn prepare_data(
                 game_data.names_map.entry(comparison_index)
             {
                 let name = get_name_limit32(comparison_index, gname, game_mem);
-                println!("{name}");
                 e.insert(name);
             }
         }
@@ -288,7 +287,12 @@ pub fn prepare_data(
         }
 
         if game_data.local_pawn == current_actor {
-            // #[cfg(feature = "debug_self")]
+            #[cfg(feature = "debug_self")]
+            {
+                let test:u64 = game_mem.read_with_offsets(ue4, &[0xDCAB858]);
+                let idx:u32 = game_mem.read_with_offsets(test, offsets::COMPARISON_INDEX);
+                println!("{}",get_name_limit32(idx, gname, game_mem))
+            }
             continue;
         }
         if game_data.local_team_set.contains(&current_actor) {
