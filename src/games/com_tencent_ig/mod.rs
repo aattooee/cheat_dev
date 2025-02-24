@@ -2,6 +2,7 @@ mod aim_bot;
 mod config;
 mod data;
 mod data_types;
+mod decryption;
 mod esp;
 mod offsets;
 mod ui;

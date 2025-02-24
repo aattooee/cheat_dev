@@ -92,7 +92,7 @@ pub struct FTransform {
 pub struct Bone {
     pub world_position: Vec3, // 世界坐标
     pub position_on_screen: Vec2,
-    #[cfg(any(feature = "debug_bones", feature = "debug_car"))]
+    #[cfg(any(feature = "debug_bones", feature = "debug_cars"))]
     pub name_for_debug: String,
 }
 #[repr(C)]
@@ -178,10 +178,10 @@ impl Player {
 #[derive(Debug, Default)]
 pub struct Car {
     pub wheels: [Bone; 2],
-    #[cfg(feature = "debug_car")]
+    #[cfg(feature = "debug_cars")]
     pub position_on_screen: Vec2,
-    #[cfg(feature = "debug_car")]
+    #[cfg(feature = "debug_cars")]
     pub debug_bones: Vec<Bone>,
-    #[cfg(feature = "debug_car")]
+    #[cfg(feature = "debug_cars")]
     pub car_type: u16,
 }

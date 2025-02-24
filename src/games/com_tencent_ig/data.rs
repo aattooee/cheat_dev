@@ -1,11 +1,11 @@
 static mut UE4: u64 = 0;
 //static mut OLDUWORLD: u64 = 0;
 static mut OLDULEVEL: u64 = 0;
-//static mut OLDGNAME: u64 = 0;
+static mut GNAME: u64 = 0;
 
 #[allow(unused_imports)]
 use super::data_types::*;
-use nohash_hasher::IntSet;
+use nohash_hasher::{IntMap, IntSet};
 #[cfg(feature = "debug_actors")]
 #[repr(C)]
 #[derive(Default, Debug)]
@@ -30,6 +30,7 @@ pub struct GameData {
     pub players_set: IntSet<u64>,
     pub non_player_set: IntSet<u64>,
     pub local_team_set: IntSet<u64>,
+    pub names_map: IntMap<u32, String>,
     pub actor_array: [u64; 10000],
     pub cars: Vec<Car>,
     #[cfg(feature = "debug_actors")]
@@ -63,6 +64,7 @@ impl Default for GameData {
             local_team_set: IntSet::default(),
             players_set: IntSet::default(),
             non_player_set: IntSet::default(),
+            names_map: IntMap::default(),
             actor_array: [0; 10000],
             cars: Vec::with_capacity(100),
             #[cfg(feature = "debug_actors")]
@@ -80,9 +82,19 @@ pub fn prepare_data(
     win_height: f32,
 ) {
     let ue4 = unsafe { UE4 };
-    //first time to get player_controller 770d757050 77048bb000
+    //gname
 
-    
+    unsafe {
+        if GNAME == 0 {
+            // try get GNAME:
+            let mut gname: u64 = game_mem.read_with_offsets(ue4, offsets::GNAME);
+            super::decryption::decrypt_gname(&mut gname, ue4, game_mem);
+            GNAME = gname
+        }
+    }
+    let gname = unsafe { GNAME };
+    //first time to get player_controller
+
     if game_data.local_player == 0 {
         let local_pawn = game_mem.read_with_offsets(ue4, offsets::LOCALPAWN);
         if local_pawn == 0 {
@@ -95,6 +107,7 @@ pub fn prepare_data(
         let key: u64 = game_mem.read_with_offsets(game_instance, &[0x108]);
         game_data.local_player = elocalplayer ^ key;
     }
+
     // already got local_player
     let local_controller: u64 = game_mem.read_with_offsets(game_data.local_player, &[0x30]);
     if local_controller == 0 {
@@ -125,7 +138,7 @@ pub fn prepare_data(
     game_data.local_pawn = target_pawn;
 
     let ulevel = game_mem.read_with_offsets(game_data.local_pawn, offsets::OUTER);
-    
+
     unsafe {
         if ulevel != OLDULEVEL {
             //gname = game_mem.read_with_offsets::<u64>(ue4, offsets::GNAME);
@@ -172,12 +185,27 @@ pub fn prepare_data(
 
     for i in 0..actors_count {
         let current_actor = game_data.actor_array[i as usize];
+        //
+        {
+            let comparison_index: u32 =
+                game_mem.read_with_offsets(current_actor, offsets::COMPARISON_INDEX);
+            if comparison_index > 0xfffff {
+                continue;
+            }
+            if let std::collections::hash_map::Entry::Vacant(e) =
+                game_data.names_map.entry(comparison_index)
+            {
+                let name = get_name_limit32(comparison_index, gname, game_mem);
+                println!("{name}");
+                e.insert(name);
+            }
+        }
 
         let car_type: u16 = game_mem.read_with_offsets(current_actor, offsets::VEHICLETYPE);
         if let Some((_car_name, wheels_offsets)) = offsets::CARS_MAP.get(&car_type) {
             let root_comp = game_mem.read_with_offsets::<u64>(current_actor, offsets::ROOT_COMP);
             let mut car = Car {
-                #[cfg(feature = "debug_car")]
+                #[cfg(feature = "debug_cars")]
                 car_type,
                 ..Default::default()
             };
@@ -205,7 +233,7 @@ pub fn prepare_data(
                 );
                 car.wheels[idx] = bone;
             }
-            #[cfg(feature = "debug_car")]
+            #[cfg(feature = "debug_cars")]
             {
                 world_to_screen_without_depth(
                     &mut car.position_on_screen,
@@ -231,6 +259,7 @@ pub fn prepare_data(
                 }
             }
             game_data.cars.push(car);
+            #[cfg(not(feature="debug_actors"))]
             continue;
         }
 
@@ -239,7 +268,7 @@ pub fn prepare_data(
             let root_comp = game_mem.read_with_offsets::<u64>(current_actor, offsets::ROOT_COMP);
             let mut actor: Actor = Actor::default();
             let mut trans: Vec3 = Vec3::default();
-            actor.r#type = idx;
+            actor.r#type = game_mem.read_with_offsets(current_actor, offsets::COMPARISON_INDEX);
 
             game_mem.read_memory_with_offsets(
                 root_comp,
@@ -259,22 +288,7 @@ pub fn prepare_data(
         }
 
         if game_data.local_pawn == current_actor {
-           // #[cfg(feature = "debug_self")]
-           {
-            let idx:u32 = game_mem.read_with_offsets(current_actor, &[0x18]);
-            let chunk = idx/0x4000;
-            let offset = idx %0x4000;
-            let key :u32= game_mem.read_with_offsets(ue4, &[0xD8F2250]);
-            let stripe:u8 = ((key as u8)-100) / 3 - 1;
-            let gname:u64 = game_mem.read_with_offsets(ue4, &[0xD8F2258,0x10*stripe as u64]);
-            let chunks:u64 = game_mem.read_with_offsets(gname, &[chunk as u64 *8]);
-            // let num:u64 = game_mem.read_with_offsets(gname+0x8, &[]);
-            // println!("->{ue4:x}->{gname:x}->{key}->{num:x}");
-            let mut arr:[u8;32] = [0;32];
-            game_mem.read_memory_with_length_and_offsets(chunks+offset as u64, arr.as_mut_ptr() as _, 32, &[]);
-            println!("{chunks:x}->{arr:?}");
-            // println!("{idx}->{block}->{offset}->{gname:x}->{entry:x}->{len:x}->{is_wide:x}");
-        }
+            // #[cfg(feature = "debug_self")]
             continue;
         }
         if game_data.local_team_set.contains(&current_actor) {
@@ -308,7 +322,7 @@ pub fn prepare_data(
         } else {
             current_player.team_id = team_id;
         }
-        
+
         //读取玩家信息
         let root_comp = game_mem.read_with_offsets::<u64>(current_actor, offsets::ROOT_COMP);
         if root_comp <= 0xffff
@@ -696,5 +710,28 @@ fn get_utf8(buf: &mut [u8], buf16: &[u16; 16]) {
 pub fn set_ue4(ue4: u64) {
     unsafe {
         UE4 = ue4;
+    }
+}
+#[inline]
+fn get_name_limit32(comparison_index: u32, gname: u64, game_mem: &mut GameMem) -> String {
+    let chunk = comparison_index / 0x4000;
+    let offset = comparison_index % 0x4000;
+    let fname_entry: u64 =
+        game_mem.read_with_offsets(gname, &[chunk as u64 * 8, offset as u64 * 8]);
+    //println!("");
+    let mut bytes: [u8; 32] = [0; 32];
+    game_mem.read_memory_with_length_and_offsets(
+        fname_entry,
+        bytes.as_mut_ptr() as _,
+        32,
+        offsets::ANSI_NAME,
+    );
+    if let Some(pos) = bytes
+        .iter()
+        .position(|&byte| !(byte as char).is_ascii_alphanumeric() && (byte as char) != '_')
+    {
+        String::from_utf8_lossy(&bytes[0..pos]).to_string()
+    } else {
+        String::from_utf8_lossy(&bytes).to_string()
     }
 }

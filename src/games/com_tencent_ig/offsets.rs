@@ -9,8 +9,11 @@ macro_rules! define_offsets {
 
 define_offsets!(
     UWORLD: [0xDC09CF0],//
+    GNAME_KEY:[0xD8F2250],
     GNAME: [0xD8F2258],
-    // ULEVEL: [0x48,0x20],
+    ANSI_NAME:[0xc],
+    COMPARISON_INDEX:[0x18],
+    //ULEVEL: [0x30],
     OUTER:[0x20],
     OBJARR: [0xB0],//
     PROJECTIONMATRIX: [0xDC0A1C0, 0x20, 0x270], //

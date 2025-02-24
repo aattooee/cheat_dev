@@ -20,34 +20,9 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData, win_width: f32, win_height: f3
         39.0,
     );
     #[cfg(feature = "debug_actors")]
-    {
-        for i in &game_data.actors {
-            let pos = i.position_on_screen.to_pos();
-            let col = [1.0, 1.0, 1.0];
-            draw_list.add_text(pos, col, format!("{}", i.r#type));
-        }
-    }
-    #[cfg(feature = "debug_car")]
-    {
-        for car in &game_data.cars {
-            draw_list.add_text(
-                car.position_on_screen.to_pos(),
-                [1.0, 1.0, 1.0],
-                format!("T:  {}", car.car_type),
-            );
-            for i in &car.debug_bones {
-                let pos = i.position_on_screen.to_pos();
-                let col = [1.0, 1.0, 1.0];
-
-                draw_list.add_text(pos, col, i.name_for_debug.clone());
-                draw_list
-                    .add_circle(pos, 5.0, col)
-                    .filled(true)
-                    .thickness(5.0)
-                    .build();
-            }
-        }
-    }
+    debug_actors(game_data, &draw_list);
+    #[cfg(feature = "debug_cars")]
+    debug_cars(game_data, &draw_list);
     for player in &game_data.players {
         if player.is_in_screen() {
             let font_scale: f32 = 0.8;
@@ -183,6 +158,39 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData, win_width: f32, win_height: f3
         for wheel in &car.wheels {
             draw_list
                 .add_circle(wheel.position_on_screen.to_pos(), 8.0, WHEEL)
+                .filled(true)
+                .thickness(5.0)
+                .build();
+        }
+    }
+}
+#[cfg(feature = "debug_actors")]
+fn debug_actors(game_data: &mut GameData, draw_list: &imgui::DrawListMut) {
+    {
+        for i in &game_data.actors {
+            let pos = i.position_on_screen.to_pos();
+            let col = [1.0, 1.0, 1.0];
+            let default = String::from("unknow");
+            let class_name = game_data.names_map.get(&i.r#type).unwrap_or(&default);
+            draw_list.add_text(pos, col, format!("{}", class_name));
+        }
+    }
+}
+#[cfg(feature = "debug_cars")]
+fn debug_cars(game_data: &mut GameData, draw_list: &imgui::DrawListMut) {
+    for car in &game_data.cars {
+        draw_list.add_text(
+            car.position_on_screen.to_pos(),
+            [1.0, 1.0, 1.0],
+            format!("T:  {}", car.car_type),
+        );
+        for i in &car.debug_bones {
+            let pos = i.position_on_screen.to_pos();
+            let col = [1.0, 1.0, 1.0];
+
+            draw_list.add_text(pos, col, i.name_for_debug.clone());
+            draw_list
+                .add_circle(pos, 5.0, col)
                 .filled(true)
                 .thickness(5.0)
                 .build();

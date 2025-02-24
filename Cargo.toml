@@ -28,7 +28,7 @@ default =[]
 debug_bones =[]
 draw_all_bones=[]
 debug_actors = []
-debug_car =[]
+debug_cars =[]
 debug_self =[]
 
 # [profile.release]
