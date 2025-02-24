@@ -9,7 +9,7 @@ macro_rules! define_offsets {
 
 define_offsets!(
     UWORLD: [0xDC09CF0],//
-    // GNAME: [D8F2258],
+    GNAME: [0xD8F2258],
     // ULEVEL: [0x48,0x20],
     OUTER:[0x20],
     OBJARR: [0xB0],//

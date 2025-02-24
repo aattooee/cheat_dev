@@ -80,7 +80,9 @@ pub fn prepare_data(
     win_height: f32,
 ) {
     let ue4 = unsafe { UE4 };
-    //first time to get player_controller
+    //first time to get player_controller 770d757050 77048bb000
+
+    
     if game_data.local_player == 0 {
         let local_pawn = game_mem.read_with_offsets(ue4, offsets::LOCALPAWN);
         if local_pawn == 0 {
@@ -123,7 +125,7 @@ pub fn prepare_data(
     game_data.local_pawn = target_pawn;
 
     let ulevel = game_mem.read_with_offsets(game_data.local_pawn, offsets::OUTER);
-
+    
     unsafe {
         if ulevel != OLDULEVEL {
             //gname = game_mem.read_with_offsets::<u64>(ue4, offsets::GNAME);
@@ -257,8 +259,22 @@ pub fn prepare_data(
         }
 
         if game_data.local_pawn == current_actor {
-            #[cfg(feature = "debug_self")]
-            {}
+           // #[cfg(feature = "debug_self")]
+           {
+            let idx:u32 = game_mem.read_with_offsets(current_actor, &[0x18]);
+            let chunk = idx/0x4000;
+            let offset = idx %0x4000;
+            let key :u32= game_mem.read_with_offsets(ue4, &[0xD8F2250]);
+            let stripe:u8 = ((key as u8)-100) / 3 - 1;
+            let gname:u64 = game_mem.read_with_offsets(ue4, &[0xD8F2258,0x10*stripe as u64]);
+            let chunks:u64 = game_mem.read_with_offsets(gname, &[chunk as u64 *8]);
+            // let num:u64 = game_mem.read_with_offsets(gname+0x8, &[]);
+            // println!("->{ue4:x}->{gname:x}->{key}->{num:x}");
+            let mut arr:[u8;32] = [0;32];
+            game_mem.read_memory_with_length_and_offsets(chunks+offset as u64, arr.as_mut_ptr() as _, 32, &[]);
+            println!("{chunks:x}->{arr:?}");
+            // println!("{idx}->{block}->{offset}->{gname:x}->{entry:x}->{len:x}->{is_wide:x}");
+        }
             continue;
         }
         if game_data.local_team_set.contains(&current_actor) {
@@ -292,7 +308,7 @@ pub fn prepare_data(
         } else {
             current_player.team_id = team_id;
         }
-
+        
         //读取玩家信息
         let root_comp = game_mem.read_with_offsets::<u64>(current_actor, offsets::ROOT_COMP);
         if root_comp <= 0xffff
