@@ -8,7 +8,6 @@ macro_rules! define_offsets {
 }
 
 define_offsets!(
-    ENCRYPTED_UWORLD: [0xDC39110],//
     GNAME_KEY:[0xD8F2250],
     GNAME: [0xD8F2258],
     ANSI_NAME:[0xc],

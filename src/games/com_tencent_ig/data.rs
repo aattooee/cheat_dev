@@ -83,9 +83,7 @@ pub fn prepare_data(
     win_height: f32,
 ) {
     let ue4 = unsafe { UE4 };
-    //gname
-    decrypt_gworld(ue4+offsets::ENCRYPTED_UWORLD[0], game_mem);
-    
+    //gname    
     unsafe {
         if GNAME == 0 {
             // try get GNAME:
@@ -95,7 +93,7 @@ pub fn prepare_data(
         }
         if GWORLD == 0{
             //try to get GWORLD:
-            let gworld = decrypt_gworld(ue4+offsets::ENCRYPTED_UWORLD[0], game_mem);
+            let gworld = decrypt_gworld(ue4, game_mem);
             GWORLD = gworld;
         }
     }
@@ -153,7 +151,11 @@ pub fn prepare_data(
     {
         let ulevel = game_mem.read_with_offsets(game_data.local_pawn, offsets::OUTER);
         let world:u64 = game_mem.read_with_offsets(ulevel, &[0x20]);
-        println!("real world:{world:x}"); 
+        unsafe {
+            let gworld = GWORLD;
+            println!("gworld->{gworld:x}->real world:{world:x}"); 
+        }
+        
     }
 
     unsafe {
