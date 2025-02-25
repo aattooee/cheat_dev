@@ -1,7 +1,8 @@
 static mut UE4: u64 = 0;
-//static mut OLDUWORLD: u64 = 0;
+static mut GWORLD: u64 = 0;
 static mut OLDULEVEL: u64 = 0;
 static mut GNAME: u64 = 0;
+
 
 #[allow(unused_imports)]
 use super::data_types::*;
@@ -72,7 +73,7 @@ impl Default for GameData {
         }
     }
 }
-use super::offsets;
+use super::{decryption::{decrypt_gname, decrypt_gworld}, offsets::{self}};
 use memory_tool_4_cheat::GameMem;
 
 pub fn prepare_data(
@@ -83,16 +84,26 @@ pub fn prepare_data(
 ) {
     let ue4 = unsafe { UE4 };
     //gname
-
+    decrypt_gworld(ue4+offsets::ENCRYPTED_UWORLD[0], game_mem);
+    
     unsafe {
         if GNAME == 0 {
             // try get GNAME:
             let mut gname: u64 = game_mem.read_with_offsets(ue4, offsets::GNAME);
-            super::decryption::decrypt_gname(&mut gname, ue4, game_mem);
+            decrypt_gname(&mut gname, ue4, game_mem);
             GNAME = gname
         }
+        if GWORLD == 0{
+            //try to get GWORLD:
+            let gworld = decrypt_gworld(ue4+offsets::ENCRYPTED_UWORLD[0], game_mem);
+            GWORLD = gworld;
+        }
     }
+    //get current world
     let gname = unsafe { GNAME };
+    let current_world = unsafe {
+        game_mem.read_with_offsets::<u64>(GWORLD, &[])
+    };
     //first time to get player_controller
 
     if game_data.local_player == 0 {
@@ -107,7 +118,7 @@ pub fn prepare_data(
         let key: u64 = game_mem.read_with_offsets(game_instance, &[0x108]);
         game_data.local_player = elocalplayer ^ key;
     }
-
+    
     // already got local_player
     let local_controller: u64 = game_mem.read_with_offsets(game_data.local_player, &[0x30]);
     if local_controller == 0 {
@@ -137,7 +148,13 @@ pub fn prepare_data(
 
     game_data.local_pawn = target_pawn;
 
-    let ulevel = game_mem.read_with_offsets(game_data.local_pawn, offsets::OUTER);
+    let ulevel = game_mem.read_with_offsets(current_world, offsets::ULEVEL);
+    #[cfg(feature="debug_gworld")]
+    {
+        let ulevel = game_mem.read_with_offsets(game_data.local_pawn, offsets::OUTER);
+        let world:u64 = game_mem.read_with_offsets(ulevel, &[0x20]);
+        println!("real world:{world:x}"); 
+    }
 
     unsafe {
         if ulevel != OLDULEVEL {

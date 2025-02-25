@@ -8,16 +8,16 @@ macro_rules! define_offsets {
 }
 
 define_offsets!(
-    UWORLD: [0xDC09CF0],//
+    ENCRYPTED_UWORLD: [0xDC39110],//
     GNAME_KEY:[0xD8F2250],
     GNAME: [0xD8F2258],
     ANSI_NAME:[0xc],
     COMPARISON_INDEX:[0x18],
-    //ULEVEL: [0x30],
+    ULEVEL: [0x30],
     OUTER:[0x20],
     OBJARR: [0xB0],//
-    PROJECTIONMATRIX: [0xDC0A1C0, 0x20, 0x270], //DebugCanvasObject for 0xDC0A1C0, 0x20 and 0xDC0A1C0
-    LOCALPAWN: [0xDCAB858,0x8,0x48,0x20],//0xDCAB858,0x8,0x48 //for AkComponent
+    PROJECTIONMATRIX: [0xDC0A1C0, 0x20, 0x270], //DebugCanvasObject for 0xDC0A1C0, 0x20 and 0xDC0A1C0 20 00 ?? ?? 00 01 ?? ?? 61 5E ?? ??
+    LOCALPAWN: [0xDCAB858,0x8,0x48,0x20],//0xDCAB858,0x8,0x48 //for AkComponent //9F 04 ?? ?? 26 ?? ?? ?? 9F 08 ?? ?? in ida
     PLAYERCONTROLLER: [0x470],
     PLAYERPOSITION: [0x1b0,0x1c0],//Actor.Object::SceneComponent* RootComponent->Vector RelativeScale3D +0xc + 0x8(Transform) +0x10(Transform.translation) ;
     ISFIRING:[0x1608],

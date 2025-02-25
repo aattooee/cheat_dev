@@ -30,7 +30,7 @@ draw_all_bones=[]
 debug_actors = []
 debug_cars =[]
 debug_self =[]
-
+debug_gworld =[]
 # [profile.release]
 # opt-level = "z"
 # lto = true
