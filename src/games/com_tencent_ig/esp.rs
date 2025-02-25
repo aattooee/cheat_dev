@@ -69,7 +69,7 @@ pub fn esp(ui: &mut Ui, game_data: &mut GameData, win_width: f32, win_height: f3
             let right = head.position_on_screen.x + width * 0.8;
             let mut top = head.position_on_screen.y - width / 3.0;
 
-            let bottom = player.ground_contact.position_on_screen.y + width / 10.0;
+            let bottom = player.ground_contact.position_on_screen.y ;
             if player.is_bot {
                 draw_list
                     .add_rect([left, top], [right, bottom], WHITE_OUTER)

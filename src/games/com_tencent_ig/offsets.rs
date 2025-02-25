@@ -53,7 +53,7 @@ define_offsets!(
     RIGHT_KNEE:[(60) * 0x30 + 0x10],
     LEFT_ANKLE:[(57) * 0x30 + 0x10],
     RIGHT_ANKLE:[(61) * 0x30 + 0x10],
-    GROUND_CONTACT:[67 + 0x10],
+    GROUND_CONTACT:[44 + 0x10],
     WEAPON:[0x22B8, 0x500, 0x838, 0x178]
 
 

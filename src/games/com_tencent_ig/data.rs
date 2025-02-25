@@ -102,13 +102,15 @@ pub fn prepare_data(
     let current_world = unsafe {
         game_mem.read_with_offsets::<u64>(GWORLD, &[])
     };
+    let ulevel:u64 = game_mem.read_with_offsets(current_world, offsets::ULEVEL);
     //first time to get player_controller
 
     if game_data.local_player == 0 {
-        let local_pawn = game_mem.read_with_offsets(ue4, offsets::LOCALPAWN);
+        let local_pawn:u64 = game_mem.read_with_offsets(ue4, offsets::LOCALPAWN);
         if local_pawn == 0 {
             return;
         }
+        #[cfg(feature="debug_gworld")]
         let ulevel = game_mem.read_with_offsets(local_pawn, offsets::OUTER);
 
         let game_instance: u64 = game_mem.read_with_offsets(ulevel, &[0x20, 0x220]);
@@ -146,7 +148,6 @@ pub fn prepare_data(
 
     game_data.local_pawn = target_pawn;
 
-    let ulevel = game_mem.read_with_offsets(current_world, offsets::ULEVEL);
     #[cfg(feature="debug_gworld")]
     {
         let ulevel = game_mem.read_with_offsets(game_data.local_pawn, offsets::OUTER);
@@ -306,15 +307,11 @@ pub fn prepare_data(
         }
 
         if game_data.local_pawn == current_actor {
-            #[cfg(feature = "debug_self")]
-            {
-                let test:u64 = game_mem.read_with_offsets(ue4, &[0xDCAB858]);
-                let idx:u32 = game_mem.read_with_offsets(test, offsets::COMPARISON_INDEX);
-                println!("{}",get_name_limit32(idx, gname, game_mem))
-            }
+            #[cfg(not(feature = "debug_self"))]
             continue;
         }
         if game_data.local_team_set.contains(&current_actor) {
+            #[cfg(not(feature = "debug_self"))]
             continue;
         }
         if game_data.non_player_set.contains(&current_actor) {
@@ -340,8 +337,11 @@ pub fn prepare_data(
         //队号
         let team_id: i32 = game_mem.read_with_offsets(current_actor, offsets::TEAMID);
         if team_id == game_data.local_team_id {
-            game_data.local_team_set.insert(current_actor);
-            continue;
+            #[cfg(not(feature="debug_self"))]
+            {
+                game_data.local_team_set.insert(current_actor);
+                continue;
+            }
         } else {
             current_player.team_id = team_id;
         }
@@ -445,7 +445,6 @@ pub fn prepare_data(
                 win_width,
                 win_height,
             );
-
             if current_player.max_health != 1000.0 {
                 game_mem.set_additional_offset(0x30 * 2, true);
             }
@@ -618,8 +617,9 @@ pub fn prepare_data(
             game_mem.un_set_additional_offset();
             #[cfg(feature = "debug_bones")]
             {
-                for i in 1..100 {
-                    let bone: Vec3 = game_mem.read_with_offsets(mesh, &[0x30 * i as u64]);
+                let j = 61;
+                for i in j..j+1 {
+                    let bone: Vec3 = game_mem.read_with_offsets(mesh, &[  i * 0x30 as u64 + 0x10]);
                     let mut bone1: Bone = Bone::default();
                     get_bone_pos(
                         &bone,
