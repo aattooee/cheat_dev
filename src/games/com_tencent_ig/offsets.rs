@@ -35,8 +35,8 @@ define_offsets!(
     PLAYERUID:[0x918,0x0],
     C2W_TRANSFORM:[0x498,0x1b0],// SceneComponent.ActorComponent.Object::Vector RelativeScale3D+0xc + 0x8(Transform)//private in pubgm, but public in pubgmhd
     MESH:[0x498,0x878],//
-    CAR_C2W_TRANSFORM:[0xaf8, 0x1b0],
-    CAR_MESH:[0xaf8, 0x878],
+    CAR_C2W_TRANSFORM:[0xae0, 0x1b0],
+    CAR_MESH:[0xae0, 0x878],
     HEAD:[5 * 0x30 + 0x10],
     CHEST:[4* 0x30 + 0x10],
     PELVIS:[48],
