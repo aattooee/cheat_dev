@@ -6,32 +6,31 @@ macro_rules! define_offsets {
         )*
     };
 }
-
+//uobjectarr:E8 ?? ?? ?? 08 89 ?? ?? 09 0C ?? ?? 0B ?? ?? ??  D8FB2A0
 define_offsets!(
-    GNAME_KEY:[0xD8F2250],
-    GNAME: [0xD8F2258],
+    GNAME_KEY:[0xDB04F70],
+    GNAME: [0xDB04F78],
     ANSI_NAME:[0xc],
     COMPARISON_INDEX:[0x18],
     ULEVEL: [0x30],
     OUTER:[0x20],
     OBJARR: [0xB0],//
-    PROJECTIONMATRIX: [0xDC0A1C0, 0x20, 0x270], //DebugCanvasObject for 0xDC0A1C0, 0x20 and 0xDC0A1C0 20 00 ?? ?? 00 01 ?? ?? 61 5E ?? ??
-    LOCALPAWN: [0xDCAB858,0x8,0x48,0x20],//0xDCAB858,0x8,0x48 //for AkComponent //9F 04 ?? ?? 26 ?? ?? ?? 9F 08 ?? ?? in ida
-    PLAYERCONTROLLER: [0x470],
+    PROJECTIONMATRIX: [0xDE1DE50, 0x20, 0x270], //DebugCanvasObject for 0xDC0A1C0, 0x20 and 0xDC0A1C0 20 00 ?? ?? 00 01 ?? ?? 61 5E ?? ??
+    LOCALPAWN: [0xDEBF698,0x8,0x48,0x20],//0xDCAB858,0x8,0x48 //for AkComponent //9F 04 ?? ?? 26 ?? ?? ?? 9F 08 ?? ?? in ida
     PLAYERPOSITION: [0x1b0,0x1c0],//Actor.Object::SceneComponent* RootComponent->Vector RelativeScale3D +0xc + 0x8(Transform) +0x10(Transform.translation) ;
     ISFIRING:[0x1608],
     ISAIMING:[0x1051],
-    DEFAULT_SPEED:[0x2930],//
+    DEFAULT_SPEED:[0x2a40],//
     ROOT_COMP:[0x1B0],
-    STATE:[0xF80],//
+    STATE:[0xfa0],//
     TRANSLATION_IN_TRANSFORM:[0x1C0],
-    HEALTH:[0xdc0],//
-    TEAMID:[0x938],//
-    DEAD:[0xddc],
-    ONVEHICLE:[0xe08],//?
-    VEHICLETYPE:[0x64c],
-    VELOCITY:[0x1c08, 0x12c],//STCharacterMovementComponent* STCharacterMovement->Vector Velocity;
-    VELOCITYONVEHICLE:[0x18b8,0x12c],//STExtraWheeledVehicle.STExtraVehicleBase.Pawn.Actor.Object::STExtraVehicleMovementComponent4W* VehicleMovement->Vector Velocity;
+    HEALTH:[0xdb0],//
+    TEAMID:[0x928],//
+    DEAD:[0xdcc],
+    ONVEHICLE:[0xdf8],//?
+    VEHICLETYPE:[0x654],
+    VELOCITY:[0x1ce8, 0x12c],//STCharacterMovementComponent* STCharacterMovement->Vector Velocity;
+    VELOCITYONVEHICLE:[0x1940,0x12c],//STExtraWheeledVehicle.STExtraVehicleBase.Pawn.Actor.Object::STExtraVehicleMovementComponent4W* VehicleMovement->Vector Velocity;
     PLAYERNAME:[0x8f0,0x0],//
     PLAYERUID:[0x918,0x0],
     C2W_TRANSFORM:[0x498,0x1b0],// SceneComponent.ActorComponent.Object::Vector RelativeScale3D+0xc + 0x8(Transform)//private in pubgm, but public in pubgmhd

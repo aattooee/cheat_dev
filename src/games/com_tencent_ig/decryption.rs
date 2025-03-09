@@ -8,7 +8,7 @@ pub(crate) fn decrypt_gname(oringin_gname: &mut u64, ue4: u64, game_mem: &mut Ga
     *oringin_gname = game_mem.read_with_offsets(*oringin_gname + 0x10 * stride as u64, &[]);
 }
 pub(crate) fn decrypt_gworld(ue4: u64, game_mem: &mut GameMem)->u64 {
-    let base = ue4 + 0xDC39110;
+    let base = ue4 + 0xDE4CF10;
     let (w8,w10,w11,w12) = game_mem.read_with_offsets::<(u32,u32,u32,u32)>(base+0x80, &[]);
     let w8:u32 = game_mem.read_with_offsets(base+w8 as u64, &[]);
     let w10:u32 = game_mem.read_with_offsets(base+w10 as u64, &[]);
